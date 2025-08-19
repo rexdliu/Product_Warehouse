@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useUIStore } from '@/stores';
 import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
@@ -11,6 +12,7 @@ interface AppLayoutProps {
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const { sidebarOpen, theme } = useUIStore();
+  const location = useLocation();
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -34,8 +36,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </div>
       </div>
 
-      {/* AI Assistant */}
-      <AIAssistant />
+      {/* AI Assistant - 始终渲染，但根据路径决定是否隐藏 */}
+      <AIAssistant hidden={location.pathname === '/ai'} />
     </div>
   );
 };

@@ -15,9 +15,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import aiIcon from '@/assets/ai-assistant-icon.jpg';
+import aiIcon from '@/assets/chatBot.svg';
+interface AIAssistantProps {
+  hidden ?: boolean;
+}
 
-export const AIAssistant: React.FC = () => {
+export const AIAssistant:React.FC<AIAssistantProps> = ({ hidden = false }) => {
   const { 
     isOpen, 
     isLoading, 
@@ -64,7 +67,10 @@ export const AIAssistant: React.FC = () => {
   const handleSuggestionClick = (suggestion: string) => {
     setInput(suggestion);
   };
-
+  if(hidden){
+    return null;
+  }
+//isOpen是false，则仅呈现浮动按钮
   if (!isOpen) {
     return (
       <Button
