@@ -56,10 +56,5 @@ This project is built with:
 
 Simply open [Lovable](https://lovable.dev/projects/108adae5-61ae-42d0-955c-520208f9cfb5) and click on Share -> Publish.
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+requirement :
+1. frontend HTTP client : npm install axios

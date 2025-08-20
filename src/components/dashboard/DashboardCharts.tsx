@@ -52,13 +52,16 @@ const categoryData = {
   datasets: [
     {
       data: [35, 25, 20, 12, 8],
-      backgroundColor: [
-        'hsl(var(--primary))',
-        'hsl(var(--accent))',
-        'hsl(var(--success))',
-        'hsl(var(--warning))',
-        'hsl(var(--muted))',
-      ],
+backgroundColor: [
+  'rgb(59, 130, 246)',   // blue-500
+  'rgb(239, 68, 68)',    // red-500
+  'rgb(34, 197, 94)',    // green-500
+  'rgb(245, 158, 11)',   // amber-500
+  'rgb(168, 85, 247)',   // purple-500
+  'rgb(236, 72, 153)',   // pink-500
+  'rgb(20, 184, 166)',   // teal-500
+  'rgb(99, 102, 241)',   // indigo-500
+],
       borderWidth: 0,
     },
   ],
