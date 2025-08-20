@@ -9,6 +9,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { useUIStore, useAuthStore } from '@/stores';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +30,13 @@ import {
 export const AppHeader: React.FC = () => {
   const { theme, toggleTheme, notifications, removeNotification } = useUIStore();
   const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -128,7 +135,7 @@ export const AppHeader: React.FC = () => {
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={logout}>
+              <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out
               </DropdownMenuItem>

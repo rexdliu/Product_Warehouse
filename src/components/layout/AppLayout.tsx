@@ -1,16 +1,12 @@
 import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useUIStore } from '@/stores';
 import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
 import { AIAssistant } from '../ai/AIAssistant';
 import { cn } from '@/lib/utils';
 
-interface AppLayoutProps {
-  children: React.ReactNode;
-}
-
-export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+export const AppLayout: React.FC = () => {
   const { sidebarOpen, theme } = useUIStore();
   const location = useLocation();
 
@@ -31,7 +27,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         )}>
           <AppHeader />
           <main className="p-6">
-            {children}
+            <Outlet />
           </main>
         </div>
       </div>

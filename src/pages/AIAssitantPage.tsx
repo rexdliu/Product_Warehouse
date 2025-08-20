@@ -10,6 +10,28 @@ import { Badge } from '@/components/ui/badge';
 import { Lightbulb, Package, BarChart3, Bot, Send, Mic, Paperclip } from 'lucide-react';
 import aiIcon from '@/assets/chatBot.svg';
 
+interface SpeechRecognitionResult {
+  0: { transcript: string };
+  length: number;
+}
+
+interface SpeechRecognitionEvent {
+  results: ArrayLike<SpeechRecognitionResult>;
+}
+
+interface SpeechRecognitionInstance {
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onend: (() => void) | null;
+}
+
+interface SpeechRecognitionGlobal {
+  SpeechRecognition?: new () => SpeechRecognitionInstance;
+  webkitSpeechRecognition?: new () => SpeechRecognitionInstance;
+}
+
 const AIAssistantPage: React.FC = () => {
   const { 
     isLoading, 
@@ -21,6 +43,9 @@ const AIAssistantPage: React.FC = () => {
   
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -29,6 +54,49 @@ const AIAssistantPage: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      addMessage(`Uploaded file: ${file.name}`, 'user');
+      e.target.value = '';
+    }
+  };
+
+  const handleMicClick = () => {
+    const { SpeechRecognition, webkitSpeechRecognition } =
+      window as unknown as SpeechRecognitionGlobal;
+    const SpeechRecognitionCtor = SpeechRecognition || webkitSpeechRecognition;
+
+    if (!SpeechRecognitionCtor) {
+      console.warn('Speech recognition not supported');
+      return;
+    }
+
+    if (!recognitionRef.current) {
+      const recognition = new SpeechRecognitionCtor();
+      recognition.lang = 'en-US';
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        const transcript = Array.from(event.results)
+          .map((result) => result[0].transcript)
+          .join('');
+        setInput((prev) => (prev ? `${prev} ${transcript}` : transcript));
+      };
+      recognition.onend = () => setIsRecording(false);
+      recognitionRef.current = recognition;
+    }
+
+    if (isRecording) {
+      recognitionRef.current.stop();
+    } else {
+      recognitionRef.current.start();
+    }
+    setIsRecording(!isRecording);
+  };
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -145,14 +213,30 @@ const AIAssistantPage: React.FC = () => {
                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                 className="pr-24 h-12 text-base"
               />
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+              />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1">
-                <Button variant="ghost" size="icon" className="h-9 w-9">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={handleUploadClick}
+                >
                   <Paperclip className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn('h-9 w-9', isRecording && 'text-primary')}
+                  onClick={handleMicClick}
+                >
                   <Mic className="h-4 w-4" />
                 </Button>
-                <Button 
+                <Button
                   onClick={handleSend}
                   disabled={!input.trim() || isLoading}
                   size="icon"

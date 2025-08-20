@@ -14,13 +14,8 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: {
-    id: '1',
-    name: 'John Smith',
-    email: 'john@warehouse.com',
-    role: 'Warehouse Manager'
-  },
-  isAuthenticated: true,
+  user: null,
+  isAuthenticated: false,
   login: (user) => set({ user, isAuthenticated: true }),
   logout: () => set({ user: null, isAuthenticated: false }),
 }));
