@@ -3,11 +3,12 @@ import {
   Bot, 
   Send, 
   X, 
-  MessageSquare,
   Maximize2,
   Minimize2,
   Mic,
-  Paperclip
+  Paperclip, 
+  Upload,
+  VolumeX
 } from 'lucide-react';
 import { useAIStore } from '@/stores';
 import { Button } from '@/components/ui/button';

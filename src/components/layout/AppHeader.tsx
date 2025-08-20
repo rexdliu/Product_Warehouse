@@ -1,3 +1,4 @@
+//  // 在实际应用中，这里还应该调用后端API来使token失效 (logout)
 import React, { useState } from 'react';
 import { 
   Search, 
@@ -25,11 +26,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { useNavigate } from 'react-router-dom';
 
 export const AppHeader: React.FC = () => {
   const { theme, toggleTheme, notifications, removeNotification } = useUIStore();
   const { user, logout } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+  const handleLogout =() => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -124,7 +131,7 @@ export const AppHeader: React.FC = () => {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={()=>navigate('/settings')}>
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>

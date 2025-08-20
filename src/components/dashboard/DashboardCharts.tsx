@@ -1,4 +1,5 @@
-import React from 'react';
+// File: src/components/dashboard/DashboardCharts.tsx
+import React,{ useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,7 +14,7 @@ import {
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 ChartJS.register(
   CategoryScale,
   LinearScale,

@@ -51,10 +51,8 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/108adae5-61ae-42d0-955c-520208f9cfb5) and click on Share -> Publish.
-
+多语言支持-i18next lib
+npm install i18next react-i18next i18next-browser-languagedetector
 requirement :
 1. frontend HTTP client : npm install axios
+AI移动和调整大小: npm install framer-motion

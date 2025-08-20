@@ -37,7 +37,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       </div>
 
       {/* AI Assistant - 始终渲染，但根据路径决定是否隐藏 */}
-      <AIAssistant hidden={location.pathname === '/ai'} />
+      <AIAssistant hidden={location.pathname === '/ai'} />    
     </div>
   );
 };
