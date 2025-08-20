@@ -12,6 +12,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useUIStore } from '@/stores';
+import { useLocaleStore } from '@/stores/localeStore';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -27,6 +28,7 @@ const navigation = [
 
 export const AppSidebar: React.FC = () => {
   const { sidebarOpen, toggleSidebar } = useUIStore();
+  const { currentLocale, setLocale, t } = useLocaleStore();
   const location = useLocation();
 
   return (

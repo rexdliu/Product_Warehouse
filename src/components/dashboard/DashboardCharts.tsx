@@ -67,17 +67,6 @@ backgroundColor: [
   ],
 };
 
-const movementData = {
-  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-  datasets: [
-    {
-      label: 'Items Moved',
-      data: [120, 190, 300, 500, 200, 300, 150],
-      backgroundColor: 'hsl(var(--primary))',
-      borderRadius: 4,
-    },
-  ],
-};
 
 const chartOptions = {
   responsive: true,
@@ -112,7 +101,50 @@ const doughnutOptions = {
   },
 };
 
-export const DashboardCharts: React.FC = () => {
+interface DashboardChartsProps {
+  timePeriod: string;
+}
+
+export const DashboardCharts: React.FC<DashboardChartsProps> = ({ timePeriod }) => {
+  const getTimeLabels = () => {
+    switch (timePeriod) {
+      case 'weekly':
+        return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      case 'monthly':
+        return ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+      case 'yearly':
+        return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      default:
+        return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    }
+  };
+
+  const getMovementData = () => {
+    const labels = getTimeLabels();
+    const data = timePeriod === 'weekly' 
+      ? [120, 190, 300, 500, 200, 300, 150]
+      : timePeriod === 'monthly' 
+        ? [1200, 1900, 3000, 2500]
+        : [1200, 1900, 3000, 5000, 2000, 3000, 1500, 2200, 2800, 3200, 2900, 3100];
+    
+    return { labels, data };
+  };
+
+  const movementData = (() => {
+    const { labels, data } = getMovementData();
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Items Moved',
+          data,
+          backgroundColor: 'hsl(var(--primary))',
+          borderRadius: 4,
+        },
+      ],
+    };
+  })();
+  
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Inventory Trends */}

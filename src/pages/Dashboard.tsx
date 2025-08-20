@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useLocaleStore } from '@/stores/localeStore';
 import { 
   Package, 
   AlertTriangle, 
@@ -17,6 +18,8 @@ import { useInventoryStore, useUIStore } from '@/stores';
 import warehouseHero from '@/assets/warehouse-hero.jpg';
 
 const Dashboard: React.FC = () => {
+  const { t } = useLocaleStore();
+  const [timePeriod, setTimePeriod] = useState('weekly');
   const { products } = useInventoryStore();
   const { addNotification } = useUIStore();
 
@@ -128,7 +131,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Charts */}
-      <DashboardCharts />
+      <DashboardCharts timePeriod={timePeriod} />
 
       {/* Bottom Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
