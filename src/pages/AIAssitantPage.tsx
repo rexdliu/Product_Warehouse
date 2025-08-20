@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Lightbulb, Package, BarChart3, Bot, Send, Mic, Paperclip } from 'lucide-react';
+import { Lightbulb, Send, Mic, Paperclip, Upload, VolumeX } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import aiIcon from '@/assets/chatBot.svg';
 
 interface SpeechRecognitionResult {
@@ -42,6 +43,7 @@ const AIAssistantPage: React.FC = () => {
   } = useAIStore();
   
   const [input, setInput] = useState('');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
@@ -62,7 +64,7 @@ const AIAssistantPage: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      addMessage(`Uploaded file: ${file.name}`, 'user');
+      setUploadedFile(file);
       e.target.value = '';
     }
   };
@@ -94,16 +96,22 @@ const AIAssistantPage: React.FC = () => {
       recognitionRef.current.stop();
     } else {
       recognitionRef.current.start();
+      setIsRecording(true);
     }
-    setIsRecording(!isRecording);
   };
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && !uploadedFile) return;
 
-    addMessage(input, 'user');
+    let messageContent = input;
+    if (uploadedFile) {
+      messageContent += ` [Uploaded: ${uploadedFile.name}]`;
+    }
+
+    addMessage(messageContent, 'user');
     const currentInput = input;
     setInput('');
+    setUploadedFile(null);
     setLoading(true);
 
     // Simulate AI response
@@ -126,6 +134,22 @@ const AIAssistantPage: React.FC = () => {
       {/* Left Panel: Insights & Suggestions */}
       <div className="hidden lg:flex flex-col w-80 border-r border-border p-4 space-y-6">
         <h2 className="text-lg font-semibold text-foreground">AI Command Center</h2>
+        {uploadedFile && (
+          <Alert>
+            <Upload className="h-4 w-4" />
+            <AlertDescription>
+              File ready: {uploadedFile.name}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setUploadedFile(null)}
+                className="ml-2 h-6 w-6 p-0"
+              >
+                ×
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
@@ -209,15 +233,16 @@ const AIAssistantPage: React.FC = () => {
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about inventory levels, predict sales, or request a report..."
+                placeholder="Ask about inventory, predictions, or insights..."
                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                className="pr-24 h-12 text-base"
+                className="pr-32 h-12 text-base"
               />
               <input
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 className="hidden"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1">
                 <Button
@@ -225,20 +250,26 @@ const AIAssistantPage: React.FC = () => {
                   size="icon"
                   className="h-9 w-9"
                   onClick={handleUploadClick}
+                  title="Upload file"
                 >
                   <Paperclip className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant={isRecording ? 'default' : 'ghost'}
                   size="icon"
-                  className={cn('h-9 w-9', isRecording && 'text-primary')}
+                  className="h-9 w-9"
                   onClick={handleMicClick}
+                  title={isRecording ? 'Stop recording' : 'Start voice input'}
                 >
-                  <Mic className="h-4 w-4" />
+                  {isRecording ? (
+                    <VolumeX className="h-4 w-4" />
+                  ) : (
+                    <Mic className="h-4 w-4" />
+                  )}
                 </Button>
                 <Button
                   onClick={handleSend}
-                  disabled={!input.trim() || isLoading}
+                  disabled={(!input.trim() && !uploadedFile) || isLoading}
                   size="icon"
                   className="h-9 w-9"
                 >
@@ -249,6 +280,11 @@ const AIAssistantPage: React.FC = () => {
             <p className="text-xs text-muted-foreground mt-2 text-center">
               WarehouseAI can make mistakes. Consider checking important information.
             </p>
+            <div className="text-xs text-muted-foreground mt-2 text-center space-y-1">
+              <p><strong>Upload functionality:</strong> Click the paperclip icon to upload PDF, Excel, Word, or CSV files for analysis.</p>
+              <p><strong>Voice input:</strong> Click the microphone icon to use voice commands (recording state shown by button color).</p>
+              <p><strong>Button variants:</strong> Ghost buttons are subtle/transparent, default buttons are filled with primary color.</p>
+            </div>
           </div>
         </div>
       </div>

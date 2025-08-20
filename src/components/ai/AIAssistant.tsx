@@ -6,7 +6,9 @@ import {
   Maximize2,
   Minimize2,
   Mic,
-  Paperclip
+  Paperclip,
+  Upload,
+  VolumeX
 } from 'lucide-react';
 import { Rnd } from 'react-rnd';
 import { useAIStore } from '@/stores';
@@ -14,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import aiIcon from '@/assets/chatBot.svg';
 
@@ -54,6 +57,7 @@ export const AIAssistant:React.FC<AIAssistantProps> = ({ hidden = false }) => {
   } = useAIStore();
   
   const [input, setInput] = useState('');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -88,10 +92,16 @@ export const AIAssistant:React.FC<AIAssistantProps> = ({ hidden = false }) => {
   }, []);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && !uploadedFile) return;
 
-    addMessage(input, 'user');
+    let messageContent = input;
+    if (uploadedFile) {
+      messageContent += ` [Uploaded: ${uploadedFile.name}]`;
+    }
+
+    addMessage(messageContent, 'user');
     setInput('');
+    setUploadedFile(null);
     setLoading(true);
 
     // Simulate AI response
@@ -119,7 +129,7 @@ export const AIAssistant:React.FC<AIAssistantProps> = ({ hidden = false }) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      addMessage(`Uploaded file: ${file.name}`, 'user');
+      setUploadedFile(file);
       e.target.value = '';
     }
   };
@@ -151,8 +161,8 @@ export const AIAssistant:React.FC<AIAssistantProps> = ({ hidden = false }) => {
       recognitionRef.current.stop();
     } else {
       recognitionRef.current.start();
+      setIsRecording(true);
     }
-    setIsRecording(!isRecording);
   };
   if(hidden){
     return null;
@@ -302,12 +312,29 @@ export const AIAssistant:React.FC<AIAssistantProps> = ({ hidden = false }) => {
           className="hidden"
           onChange={handleFileChange}
         />
+        {uploadedFile && (
+          <Alert className="mb-2">
+            <Upload className="h-4 w-4" />
+            <AlertDescription>
+              File ready: {uploadedFile.name}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setUploadedFile(null)}
+                className="ml-2 h-6 w-6 p-0"
+              >
+                ×
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         <div className="flex space-x-2">
           <Button
             variant="ghost"
             size="sm"
             className="h-9 w-9 p-0"
             onClick={handleUploadClick}
+            title="Upload file"
           >
             <Paperclip className="h-4 w-4" />
           </Button>
@@ -319,17 +346,21 @@ export const AIAssistant:React.FC<AIAssistantProps> = ({ hidden = false }) => {
             className="flex-1"
           />
           <Button
-            variant="ghost"
+            variant={isRecording ? 'default' : 'ghost'}
             size="sm"
             className="h-9 w-9 p-0"
             onClick={handleMicClick}
-            aria-label="Toggle microphone"
+            aria-label={isRecording ? 'Stop recording' : 'Start voice input'}
           >
-            <Mic className="h-4 w-4" />
+            {isRecording ? (
+              <VolumeX className="h-4 w-4" />
+            ) : (
+              <Mic className="h-4 w-4" />
+            )}
           </Button>
           <Button
             onClick={handleSend}
-            disabled={!input.trim() || isLoading}
+            disabled={(!input.trim() && !uploadedFile) || isLoading}
             size="sm"
             className="h-9 w-9 p-0"
           >
