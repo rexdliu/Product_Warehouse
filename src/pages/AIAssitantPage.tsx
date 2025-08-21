@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAIStore } from '@/stores';
-import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,14 +12,13 @@ import { Lightbulb, Package, BarChart3, Bot, Send, Mic, Paperclip, Upload, Volum
 import aiIcon from '@/assets/chatBot.svg';
 
 const AIAssistantPage: React.FC = () => {
-  const { 
-    isLoading, 
-    messages, 
-    suggestions, 
-    addMessage, 
-    setLoading 
+  const {
+    isLoading,
+    messages,
+    suggestions,
+    addMessage,
+    setLoading
   } = useAIStore();
-  const { t } = useTranslation();
   
   const [input, setInput] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -89,7 +87,7 @@ const AIAssistantPage: React.FC = () => {
     <div className="flex h-[calc(100vh-4rem)]"> {/* Full height minus header */}
       {/* Left Panel: Insights & Suggestions */}
       <div className="hidden lg:flex flex-col w-80 border-r border-border p-4 space-y-6">
-        <h2 className="text-lg font-semibold text-foreground">AI Command Center</h2>
+        <h2 className="text-lg font-semibold text-foreground">AI 指挥中心</h2>
         
         {uploadedFile && (
           <Alert>
@@ -112,7 +110,7 @@ const AIAssistantPage: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Lightbulb className="h-4 w-4 text-warning" />
-              <span>Proactive Insights</span>
+              <span>主动洞察</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-3">
@@ -121,7 +119,7 @@ const AIAssistantPage: React.FC = () => {
           </CardContent>
         </Card>
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-muted-foreground">Quick Actions</h3>
+          <h3 className="text-sm font-semibold text-muted-foreground">快速操作</h3>
           <div className="flex flex-col space-y-2">
             {suggestions.map((suggestion, index) => (
               <Button key={index} variant="outline" size="sm" className="justify-start" onClick={() => setInput(suggestion)}>
@@ -172,7 +170,7 @@ const AIAssistantPage: React.FC = () => {
                 </Avatar>
                 <div className="bg-muted rounded-lg px-4 py-3 text-sm shadow-sm">
                   <div className="flex items-center space-x-1">
-                    <span className="text-muted-foreground">Thinking</span>
+                    <span className="text-muted-foreground">思考中</span>
                     <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce"></div>
                     <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                     <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
@@ -191,7 +189,7 @@ const AIAssistantPage: React.FC = () => {
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={t('ai.placeholder')}
+                placeholder="询问库存、预测或见解..."
                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                 className="pr-32 h-12 text-base"
               />
@@ -208,16 +206,16 @@ const AIAssistantPage: React.FC = () => {
                   size="icon" 
                   className="h-9 w-9"
                   onClick={() => fileInputRef.current?.click()}
-                  title="Upload file"
+                  title="上传文件"
                 >
                   <Paperclip className="h-4 w-4" />
                 </Button>
-                <Button 
+                <Button
                   variant={isRecording ? "default" : "ghost"}
-                  size="icon" 
+                  size="icon"
                   className="h-9 w-9"
                   onClick={toggleRecording}
-                  title={isRecording ? "Stop recording" : "Start voice input"}
+                  title={isRecording ? "停止录音" : "开始语音输入"}
                 >
                   {isRecording ? (
                     <VolumeX className="h-4 w-4" />
@@ -236,12 +234,12 @@ const AIAssistantPage: React.FC = () => {
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2 text-center">
-              WarehouseAI can make mistakes. Consider checking important information.
+              WarehouseAI 可能会出错，请核对重要信息。
             </p>
             <div className="text-xs text-muted-foreground mt-2 text-center space-y-1">
-              <p><strong>Upload functionality:</strong> Click the paperclip icon to upload PDF, Excel, Word, or CSV files for analysis.</p>
-              <p><strong>Voice input:</strong> Click the microphone icon to use voice commands (recording state shown by button color).</p>
-              <p><strong>Button variants:</strong> Ghost buttons are subtle/transparent, default buttons are filled with primary color.</p>
+              <p><strong>上传功能：</strong>点击回形针图标上传 PDF、Excel、Word 或 CSV 文件进行分析。</p>
+              <p><strong>语音输入：</strong>点击麦克风图标使用语音命令（按钮颜色显示录音状态）。</p>
+              <p><strong>按钮样式：</strong>Ghost 按钮为透明样式，default 按钮为主色填充。</p>
             </div>
           </div>
         </div>
