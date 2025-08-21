@@ -20,9 +20,8 @@ import type { DateRange } from 'react-day-picker';
 import { startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 
-
 // 组件：经销商详情卡片
-const DistributorDetails = ({ distributor }: { distributor: Distributor | null }) => {
+const DistributorDetails = ({ distributor, t }: { distributor: Distributor | null; t: any }) => {
   if (!distributor) return null;
   return (
     <Card>
@@ -31,8 +30,8 @@ const DistributorDetails = ({ distributor }: { distributor: Distributor | null }
         <CardDescription>{distributor.region}</CardDescription>
       </CardHeader>
       <CardContent className="text-sm space-y-2">
-        <p className="flex items-center"><User className="h-4 w-4 mr-2 text-muted-foreground" />联系人: {distributor.contactPerson}</p>
-        <p className="flex items-center"><Phone className="h-4 w-4 mr-2 text-muted-foreground" />联系电话: {distributor.phone}</p>
+        <p className="flex items-center"><User className="h-4 w-4 mr-2 text-muted-foreground" />{t('inventory.contactPerson')}: {distributor.contactPerson}</p>
+        <p className="flex items-center"><Phone className="h-4 w-4 mr-2 text-muted-foreground" />{t('inventory.contactPhone')}: {distributor.phone}</p>
       </CardContent>
     </Card>
   );
@@ -48,6 +47,7 @@ const Inventory: React.FC = () => {
    // 页面级本地状态：当前选中的经销商 + 筛选条件
   const [selectedDistributorId, setSelectedDistributorId] = useState<string | null>(null);
   const [filters, setFilters] = useState<SalesFilters>({});
+
 
 
   // 计算总库存指标
@@ -178,7 +178,7 @@ const Inventory: React.FC = () => {
                 className="flex items-center gap-2"
               >
                 <CalendarIcon className="h-4 w-4" />
-                {t('清除')}
+                {t('common.clearFilters')}
               </Button>
             </>
           )}
@@ -190,7 +190,7 @@ const Inventory: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 左侧：经销商信息 + 当前筛选下总销售额 */}
           <div className="lg:col-span-1 space-y-6">
-            <DistributorDetails distributor={selectedDistributor} />
+            <DistributorDetails distributor={selectedDistributor} t={t} />
 
             <Card>
               <CardHeader>

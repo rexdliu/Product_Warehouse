@@ -13,6 +13,8 @@ import { useUIStore, useAuthStore } from '@/stores';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { LanguageToggle } from './LanguageToggle';
+import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +31,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 export const AppHeader: React.FC = () => {
+  const { t } = useTranslation();
   const { theme, toggleTheme, notifications, removeNotification } = useUIStore();
   const { user, logout } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,7 +49,7 @@ export const AppHeader: React.FC = () => {
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search products, orders, or ask AI..."
+              placeholder={t('common.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -56,6 +59,9 @@ export const AppHeader: React.FC = () => {
 
         {/* Actions */}
         <div className="flex items-center space-x-4">
+          {/* Language Toggle */}
+          <LanguageToggle />
+          
           {/* Theme Toggle */}
           <Button
             variant="ghost"
@@ -84,9 +90,9 @@ export const AppHeader: React.FC = () => {
             </PopoverTrigger>
             <PopoverContent className="w-80" align="end">
               <div className="space-y-2">
-                <h4 className="font-medium">Notifications</h4>
+                <h4 className="font-medium">{t('common.notifications')}</h4>
                 {notifications.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No new notifications</p>
+                  <p className="text-sm text-muted-foreground">{t('common.noNotifications')}</p>
                 ) : (
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {notifications.map((notification) => (
@@ -133,11 +139,11 @@ export const AppHeader: React.FC = () => {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={()=>navigate('/settings')}>
                 <Settings className="mr-2 h-4 w-4" />
-                Settings
+                {t('common.settings')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
-                Log out
+                {t('common.logout')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

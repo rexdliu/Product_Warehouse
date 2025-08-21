@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 import aiIcon from '@/assets/chatBot.svg';
 
 interface DraggableAIProps {
@@ -23,6 +24,7 @@ interface DraggableAIProps {
 }
 
 export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
+  const { t } = useTranslation();
   const { 
     isOpen, 
     isLoading, 
@@ -188,9 +190,9 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
             <img src={aiIcon} alt="AI Assistant" className="h-full w-full object-cover" />
           </div>
           <div>
-            <h3 className="font-semibold text-sm">AI Warehouse Assistant</h3>
+            <h3 className="font-semibold text-sm">{t('ai.title')}</h3>
             <p className="text-xs text-muted-foreground">
-              {isLoading ? 'Thinking...' : 'Online'}
+              {isLoading ? t('ai.thinking') : t('ai.online')}
             </p>
           </div>
         </div>
@@ -298,7 +300,7 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about inventory, predictions, or insights..."
+            placeholder={t('ai.placeholder')}
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
             className="flex-1"
           />
