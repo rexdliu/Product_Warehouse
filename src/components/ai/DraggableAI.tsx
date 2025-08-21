@@ -38,12 +38,17 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Set initial position based on window dimensions
-  const getInitialPosition = () => ({
-    x: window.innerWidth - 420,
-    y: window.innerHeight - 600,
+  const collapsedPosition = () => ({
+    x: window.innerWidth - 56 - 24,
+    y: window.innerHeight - 56 - 24,
   });
 
-  const [position, setPosition] = useState(getInitialPosition());
+  const openedPosition = (w = 384, h = 520) => ({
+    x: window.innerWidth - w - 24,
+    y: window.innerHeight - h - 24,
+  });
+
+  const [position, setPosition] = useState(collapsedPosition());
   const [size, setSize] = useState({ width: 384, height: 520 });
 
   // State to manage dragging and resizing behavior
@@ -62,7 +67,15 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
+  useEffect(() => {
+    if (isOpen) {
+      setSize({ width: 384, height: 520 });
+      setPosition(openedPosition());
+    } else {
+      setIsFullscreen(false);
+      setPosition(collapsedPosition());
+    }
+  }, [isOpen]);
   const handleSend = async () => {
     if (!input.trim()) return;
     addMessage(input, 'user');
@@ -164,8 +177,8 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
 
   const resetPosition = () => {
     setIsFullscreen(false);
-    setPosition(getInitialPosition());
     setSize({ width: 384, height: 520 });
+    setPosition(openedPosition());
   };
 
   // --- Component Renders ---

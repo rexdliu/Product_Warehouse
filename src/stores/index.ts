@@ -1,16 +1,17 @@
 import { create } from 'zustand';
 
 // Auth Store
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  account: string;
+  role: string;
+}
 interface AuthState {
-  user: {
-    id: string;
-    name: string;
-    email:string;
-    account: string;
-    role: string;
-  } | null;
+  user: User|null;
   isAuthenticated: boolean;
-  login: (user: any) => void;
+  login: (user:User) => void;
   logout: () => void;
 }
 
@@ -23,7 +24,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     role: 'Warehouse Manager'
   },
   isAuthenticated: true,
-  login: (user) => set({ user, isAuthenticated: true }),
+   login: (user: User) => set({ user, isAuthenticated: true }),
   logout: () => set({ user: null, isAuthenticated: false }),
 }));
 
@@ -38,6 +39,7 @@ interface UIState {
     type: 'info' | 'warning' | 'error' | 'success';
     timestamp: Date;
   }>;
+  setTheme: (theme: 'light' | 'dark') => void;
   toggleSidebar: () => void;
   toggleTheme: () => void;
   addNotification: (notification: Omit<UIState['notifications'][0], 'id' | 'timestamp'>) => void;
@@ -64,7 +66,37 @@ export const useUIStore = create<UIState>((set) => ({
     }
   ],
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
-  toggleTheme: () => set((state) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
+  setTheme: (theme) => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    set({ theme });
+    const stored = localStorage.getItem('warehouse-settings');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        localStorage.setItem('warehouse-settings', JSON.stringify({ ...data, theme }));
+      } catch {
+        localStorage.setItem('warehouse-settings', JSON.stringify({ theme }));
+      }
+    } else {
+      localStorage.setItem('warehouse-settings', JSON.stringify({ theme }));
+    }
+  },
+  toggleTheme: () => set((state) => {
+    const newTheme = state.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    const stored = localStorage.getItem('warehouse-settings');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        localStorage.setItem('warehouse-settings', JSON.stringify({ ...data, theme: newTheme }));
+      } catch {
+        localStorage.setItem('warehouse-settings', JSON.stringify({ theme: newTheme }));
+      }
+    } else {
+      localStorage.setItem('warehouse-settings', JSON.stringify({ theme: newTheme }));
+    }
+    return { theme: newTheme };
+  }),
   addNotification: (notification) => set((state) => ({
     notifications: [
       { ...notification, id: Date.now().toString(), timestamp: new Date() },

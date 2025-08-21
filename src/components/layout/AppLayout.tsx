@@ -11,12 +11,25 @@ interface AppLayoutProps {
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
-  const { sidebarOpen, theme } = useUIStore();
+  const { sidebarOpen, theme, toggleSidebar, setTheme } = useUIStore();
   const location = useLocation();
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
+  useEffect(() => {
+    const stored = localStorage.getItem('warehouse-settings');
+    if (stored) {
+      const data = JSON.parse(stored);
+      const desiredTheme = data.theme === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : data.theme;
+      setTheme(desiredTheme);
+      document.body.classList.toggle('no-animations', !data.showAnimations);
+      document.body.classList.toggle('no-tooltips', !data.showTooltips);
+      if (data.compactSidebar !== !sidebarOpen) toggleSidebar();
+    }
+  }, [setTheme, sidebarOpen, toggleSidebar]);
 
   return (
     <div className="min-h-screen bg-background">

@@ -150,3 +150,12 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+.no-animations * {
+  transition: none !important;
+  animation: none !important;
+}
+
+.no-tooltips [role="tooltip"] {
+  display: none !important;
+}

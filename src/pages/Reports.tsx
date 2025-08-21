@@ -20,12 +20,12 @@ const AIInsightCard = ({ title, message }: { title: string, message: string }) =
     </CardContent>
   </Card>
 );
-
+type ReportRow = Record<string, string | number>;
 // 主页面组件
 const Reports: React.FC = () => {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [reportData, setReportData] = useState<any[] | null>(null);
+  const [reportData, setReportData] = useState<ReportRow[] | null>(null);
   const [reportHeaders, setReportHeaders] = useState<string[]>([]);
 
   // 模拟 Text-to-SQL 后端调用

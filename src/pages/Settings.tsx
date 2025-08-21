@@ -35,13 +35,52 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-
+import {useUIStore} from "@/stores";
 
 const Settings = () => {
+   const { theme: globalTheme, setTheme: setGlobalTheme, sidebarOpen, toggleSidebar } = useUIStore();
   // 主题（支持 System/Dark/Light 切换并生效到 <html>）
-  const [theme, setTheme] = useState<'system' | 'light' | 'dark'>('system');
+  const [theme, setTheme] = useState<'system' | 'light' | 'dark'>(() => {
+    const stored = localStorage.getItem('warehouse-settings');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored) as { theme?: 'system' | 'light' | 'dark' };
+        return (data.theme ?? globalTheme) as 'system' | 'light' | 'dark';
+      } catch {
+        return globalTheme as 'light' | 'dark';
+      }
+    }
+    return globalTheme as 'light' | 'dark';
+  });
+  interface Notifications {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+    lowStock: boolean;
+    orderUpdates: boolean;
+    systemAlerts: boolean;
+  }
+  interface AISettings {
+    enabled: boolean;
+    autoSuggestions: boolean;
+    voiceInput: boolean;
+    contextMemory: string;
+    responseSpeed: string;
+  }
+  interface SettingsData {
+    theme: 'system' | 'light' | 'dark';
+    notifications: Notifications;
+    aiSettings: AISettings;
+    lowStockThreshold: number;
+    autoReorder: boolean;
+    avatarUrl: string;
+    showAnimations: boolean;
+    compactSidebar: boolean;
+    showTooltips: boolean;
+  }
+
   // 通知
-  const [notifications, setNotifications] = useState({
+  const [notifications, setNotifications] = useState<Notifications>({
     email: true,
     push: true,
     sms: false,
@@ -50,7 +89,7 @@ const Settings = () => {
     systemAlerts: true,
   });
   // AI 设置
-  const [aiSettings, setAiSettings] = useState({
+  const [aiSettings, setAiSettings] = useState<AISettings>({
     enabled: true,
     autoSuggestions: true,
     voiceInput: false,
@@ -65,8 +104,13 @@ const Settings = () => {
   // 头像上传预览
   const [avatarUrl, setAvatarUrl] = useState<string>('https://github.com/shadcn.png');
   // 保存成功提示
-  const [toastVisible, setToastVisible] = useState<boolean>(false);
-
+ // 界面选项
+  const [showAnimations, setShowAnimations] = useState<boolean>(true);
+  const [compactSidebar, setCompactSidebar] = useState<boolean>(false);
+  const [showTooltips, setShowTooltips] = useState<boolean>(true);
+  // 保存/取消提示
+  const [toast, setToast] = useState<{ visible: boolean; message: string }>({ visible: false, message: '' });
+  const [savedSettings, setSavedSettings] = useState<SettingsData | null>(null);
   // 主题切换副作用：将 dark 类应用到 html 上；System 模式监听 OS 变化
   useEffect(() => {
     const root = document.documentElement;
@@ -85,6 +129,88 @@ const Settings = () => {
       apply(theme);
     }
   }, [theme]);
+useEffect(() => {
+    const stored = localStorage.getItem('warehouse-settings');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored) as Partial<SettingsData>;
+        setTheme((data.theme ?? globalTheme) as 'system' | 'light' | 'dark');
+        setNotifications(data.notifications ?? notifications);
+        setAiSettings(data.aiSettings ?? aiSettings);
+        setLowStockThreshold(data.lowStockThreshold ?? lowStockThreshold);
+        setAutoReorder(data.autoReorder ?? autoReorder);
+        setAvatarUrl(data.avatarUrl ?? avatarUrl);
+        setShowAnimations(data.showAnimations ?? true);
+        setCompactSidebar(data.compactSidebar ?? false);
+        setShowTooltips(data.showTooltips ?? true);
+        setSavedSettings({
+          theme: data.theme ?? globalTheme,
+          notifications: data.notifications ?? notifications,
+          aiSettings: data.aiSettings ?? aiSettings,
+          lowStockThreshold: data.lowStockThreshold ?? lowStockThreshold,
+          autoReorder: data.autoReorder ?? autoReorder,
+          avatarUrl: data.avatarUrl ?? avatarUrl,
+          showAnimations: data.showAnimations ?? true,
+          compactSidebar: data.compactSidebar ?? false,
+          showTooltips: data.showTooltips ?? true,
+        });
+      } catch {
+        setSavedSettings({
+          theme: globalTheme,
+          notifications,
+          aiSettings,
+          lowStockThreshold,
+          autoReorder,
+          avatarUrl,
+          showAnimations,
+          compactSidebar,
+          showTooltips,
+        });
+      }
+    } else {
+      setSavedSettings({
+        theme: globalTheme,
+        notifications,
+        aiSettings,
+        lowStockThreshold,
+        autoReorder,
+        avatarUrl,
+        showAnimations,
+        compactSidebar,
+        showTooltips,
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sync local theme state when global theme changes (e.g., header toggle)
+  useEffect(() => {
+    const stored = localStorage.getItem('warehouse-settings');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored) as Partial<SettingsData>;
+        setTheme((data.theme ?? globalTheme) as 'system' | 'light' | 'dark');
+        setSavedSettings(prev => prev ? { ...prev, theme: data.theme ?? globalTheme } : prev);
+        return;
+      } catch {
+        // fall through to set from globalTheme
+      }
+    }
+    setTheme(globalTheme as 'light' | 'dark');
+    setSavedSettings(prev => prev ? { ...prev, theme: globalTheme } : prev);
+  }, [globalTheme]);
+
+  useEffect(() => {
+    document.body.classList.toggle('no-animations', !showAnimations);
+  }, [showAnimations]);
+
+  useEffect(() => {
+    document.body.classList.toggle('no-tooltips', !showTooltips);
+  }, [showTooltips]);
+
+  useEffect(() => {
+    if (compactSidebar !== !sidebarOpen) toggleSidebar();
+  }, [compactSidebar, sidebarOpen, toggleSidebar]);
 
   const handleNotificationToggle = (key: keyof typeof notifications) => {
     setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
@@ -102,14 +228,53 @@ const Settings = () => {
       alert('图片大小不能超过 5MB');
       return;
     }
-    const url = URL.createObjectURL(file);
-    setAvatarUrl(url);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
-
   const handleSave = () => {
     // 此处可提交设置到后端
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 2000);
+    const data: SettingsData = {
+      theme,
+      notifications,
+      aiSettings,
+      lowStockThreshold,
+      autoReorder,
+      avatarUrl,
+      showAnimations,
+      compactSidebar,
+      showTooltips,
+    };
+    localStorage.setItem('warehouse-settings', JSON.stringify(data));
+    setSavedSettings(data);
+    const desiredTheme = theme === 'system'
+      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : theme;
+    setGlobalTheme(desiredTheme);
+    setToast({ visible: true, message: '设置已保存' });
+    setTimeout(() => setToast({ visible: false, message: '' }), 2000);
+  };
+
+  const handleCancel = () => {
+    if (savedSettings) {
+      setTheme(savedSettings.theme);
+      setNotifications(savedSettings.notifications);
+      setAiSettings(savedSettings.aiSettings);
+      setLowStockThreshold(savedSettings.lowStockThreshold);
+      setAutoReorder(savedSettings.autoReorder);
+      setAvatarUrl(savedSettings.avatarUrl);
+      setShowAnimations(savedSettings.showAnimations);
+      setCompactSidebar(savedSettings.compactSidebar);
+      setShowTooltips(savedSettings.showTooltips);
+      const desiredTheme = savedSettings.theme === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : savedSettings.theme;
+      setGlobalTheme(desiredTheme);
+    }
+    setToast({ visible: true, message: '已放弃更改并恢复到上次保存' });
+    setTimeout(() => setToast({ visible: false, message: '' }), 2000);
   };
 
   return (
@@ -296,13 +461,6 @@ const Settings = () => {
                         <Slider value={[lowStockThreshold]} max={100} step={5} className="w-32" onValueChange={(v) => setLowStockThreshold(v[0])} />
                         <span className="text-sm font-medium w-12 text-right">{lowStockThreshold}%</span>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>自动补货</Label>
-                        <p className="text-sm text-muted-foreground">当库存不足时自动创建采购单</p>
-                      </div>
-                      <Switch checked={autoReorder} onCheckedChange={setAutoReorder} />
                     </div>
                   </div>
                 </div>
@@ -608,21 +766,20 @@ const Settings = () => {
                 {/* 删除 Display Density 模块 */}
 
                 <Separator />
-
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">界面选项</h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Label>显示动效</Label>
-                      <Switch defaultChecked />
+                      <Switch checked={showAnimations} onCheckedChange={setShowAnimations} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label>紧凑侧边栏</Label>
-                      <Switch />
+                      <Switch checked={compactSidebar} onCheckedChange={setCompactSidebar} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label>显示工具提示</Label>
-                      <Switch defaultChecked />
+                       <Switch checked={showTooltips} onCheckedChange={setShowTooltips} />
                     </div>
                   </div>
                 </div>
@@ -770,7 +927,7 @@ const Settings = () => {
 
         {/* 底部操作区 */}
         <div className="flex justify-end gap-4 pt-6">
-          <Button variant="outline">取消</Button>
+           <Button variant="outline" onClick={handleCancel}>取消</Button>
           <Button className="gap-2" onClick={handleSave}>
             <Check className="w-4 h-4" />
             保存更改
@@ -779,9 +936,11 @@ const Settings = () => {
       </div>
 
       {/* 简易 Toast 通知 */}
-      {toastVisible && (
-        <div className="fixed bottom-6 right-6 z-50 rounded-md bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-lg px-4 py-3">
-          设置已保存
+      {toast.visible && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="rounded-md bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-lg px-4 py-3">
+            {toast.message}
+          </div>
         </div>
       )}
     </div>
