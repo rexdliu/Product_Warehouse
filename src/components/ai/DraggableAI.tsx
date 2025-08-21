@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Bot, 
-  Send, 
-  X, 
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import {
+  Bot,
+  Send,
+  X,
   Maximize2,
   Minimize2,
   Mic,
@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import aiIcon from '@/assets/chatBot.svg';
+// The unused Draggable import has been removed to avoid confusion.
 
 interface DraggableAIProps {
   hidden?: boolean;
@@ -27,22 +28,32 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
     isOpen,
     isLoading,
     messages,
-    suggestions, 
-    toggleChat, 
-    addMessage, 
-    setLoading 
+    suggestions,
+    toggleChat,
+    addMessage,
+    setLoading
   } = useAIStore();
-  
+
   const [input, setInput] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [position, setPosition] = useState({ x: window.innerWidth - 420, y: 100 });
-  const [size, setSize] = useState({ width: 384, height: 500 });
+
+  // Set initial position based on window dimensions
+  const getInitialPosition = () => ({
+    x: window.innerWidth - 420,
+    y: window.innerHeight - 600,
+  });
+
+  const [position, setPosition] = useState(getInitialPosition());
+  const [size, setSize] = useState({ width: 384, height: 520 });
+
+  // State to manage dragging and resizing behavior
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const resizeStartRef = useRef({ width: 0, height: 0, x: 0, y: 0 });
+  const hasMovedRef = useRef(false); // Use ref to avoid re-renders on move
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -54,7 +65,6 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
 
   const handleSend = async () => {
     if (!input.trim()) return;
-
     addMessage(input, 'user');
     setInput('');
     setLoading(true);
@@ -77,185 +87,165 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
     setInput(suggestion);
   };
 
-  // Mouse event handlers for dragging
+  // --- Drag and Resize Logic ---
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isFullscreen) return;
+    hasMovedRef.current = false;
     setIsDragging(true);
-    setDragOffset({
+    dragStartRef.current = {
       x: e.clientX - position.x,
       y: e.clientY - position.y,
-    });
+    };
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging || isFullscreen) return;
-    
-    const newX = Math.max(0, Math.min(window.innerWidth - size.width, e.clientX - dragOffset.x));
-    const newY = Math.max(0, Math.min(window.innerHeight - size.height, e.clientY - dragOffset.y));
-    
-    setPosition({ x: newX, y: newY });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    setIsResizing(false);
-  };
-
-  // Resize handlers
   const handleResizeMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isFullscreen) return;
+    hasMovedRef.current = false;
     setIsResizing(true);
+    resizeStartRef.current = {
+      width: size.width,
+      height: size.height,
+      x: e.clientX,
+      y: e.clientY,
+    };
   };
 
-  const handleResizeMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging || isFullscreen) return;
+    hasMovedRef.current = true;
+
+    const newX = e.clientX - dragStartRef.current.x;
+    const newY = e.clientY - dragStartRef.current.y;
+
+    // Constrain movement within the viewport
+    const containerWidth = isOpen ? size.width : 56;
+    const containerHeight = isOpen ? size.height : 56;
+    const boundedX = Math.max(0, Math.min(window.innerWidth - containerWidth, newX));
+    const boundedY = Math.max(0, Math.min(window.innerHeight - containerHeight, newY));
+
+    setPosition({ x: boundedX, y: boundedY });
+  }, [isDragging, isFullscreen, isOpen, size.width, size.height]);
+
+  const handleResizeMouseMove = useCallback((e: MouseEvent) => {
     if (!isResizing || isFullscreen) return;
-    
-    const newWidth = Math.max(300, Math.min(600, e.clientX - position.x));
-    const newHeight = Math.max(400, Math.min(800, e.clientY - position.y));
-    
-    setSize({ width: newWidth, height: newHeight });
-  };
+    hasMovedRef.current = true;
 
-  // Bind global mouse events
+    const dx = e.clientX - resizeStartRef.current.x;
+    const dy = e.clientY - resizeStartRef.current.y;
+
+    // Correctly calculate new width and height with minimum constraints
+    const newWidth = Math.max(320, resizeStartRef.current.width + dx);
+    const newHeight = Math.max(400, resizeStartRef.current.height + dy);
+
+    setSize({ width: newWidth, height: newHeight });
+  }, [isResizing, isFullscreen]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+    setIsResizing(false);
+  }, []);
+
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mouseup', handleMouseUp, { once: true });
     }
     if (isResizing) {
       document.addEventListener('mousemove', handleResizeMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mouseup', handleMouseUp, { once: true });
     }
-    
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mousemove', handleResizeMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, isResizing, dragOffset, position, size]);
+  }, [isDragging, isResizing, handleMouseMove, handleResizeMouseMove, handleMouseUp]);
 
   const resetPosition = () => {
-    setPosition({ x: window.innerWidth - 420, y: 100 });
-    setSize({ width: 384, height: 500 });
+    setIsFullscreen(false);
+    setPosition(getInitialPosition());
+    setSize({ width: 384, height: 520 });
   };
 
-  if (hidden) {
-    return null;
-  }
+  // --- Component Renders ---
+
+  if (hidden) return null;
 
   if (!isOpen) {
+    const handleIconClick = () => {
+      // Only toggle chat if the icon wasn't dragged
+      if (!hasMovedRef.current) {
+        toggleChat();
+      }
+    };
+
     return (
-      <Button
-        onClick={toggleChat}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-gradient-to-br from-primary to-accent hover:shadow-xl transition-all duration-300 z-50"
-        size="icon"
+      <div
+        className="fixed z-50 cursor-move"
+        style={{ left: position.x, top: position.y, width: 56, height: 56 }}
+        onMouseDown={handleMouseDown}
+        onClick={handleIconClick}
       >
-        <Bot className="h-6 w-6" />
-      </Button>
+        <Button
+          className="h-14 w-14 rounded-full shadow-lg bg-gradient-to-br from-primary to-accent hover:shadow-xl transition-all duration-300"
+          size="icon"
+        >
+          <Bot className="h-6 w-6" />
+        </Button>
+      </div>
     );
   }
 
   return (
-    <div 
-      ref={containerRef}
+    <div
       className={cn(
-        "fixed bg-card border border-border shadow-2xl transition-all duration-300 z-50 select-none",
-        isFullscreen 
-          ? "inset-4 rounded-lg" 
-          : "rounded-lg"
+        "fixed bg-card border border-border shadow-2xl transition-all duration-300 z-50 flex flex-col",
+        isFullscreen ? "inset-4 rounded-xl" : "rounded-lg"
       )}
-      style={
-        isFullscreen 
-          ? {} 
-          : {
-              left: position.x,
-              top: position.y,
-              width: size.width,
-              height: size.height,
-            }
-      }
+      style={isFullscreen ? {} : { left: position.x, top: position.y, width: size.width, height: size.height }}
     >
       {/* Header */}
-      <div 
-        className={cn(
-          "flex items-center justify-between p-4 border-b border-border",
-          !isFullscreen && "cursor-move"
-        )}
+      <div
+        className={cn("flex-shrink-0 flex items-center justify-between p-4 border-b", !isFullscreen && "cursor-move")}
         onMouseDown={handleMouseDown}
       >
-        <div className="flex items-center space-x-3">
-          <div className="h-8 w-8 rounded-full overflow-hidden">
+        {/* ... Header content is unchanged ... */}
+         <div className="flex items-center space-x-3">
+          <div className="h-8 w-8 rounded-full overflow-hidden flex-shrink-0">
             <img src={aiIcon} alt="AI Assistant" className="h-full w-full object-cover" />
           </div>
           <div>
             <h3 className="font-semibold text-sm">AI 仓库助手</h3>
-            <p className="text-xs text-muted-foreground">
-              {isLoading ? '思考中...' : '在线'}
-            </p>
+            <p className="text-xs text-muted-foreground">{isLoading ? '思考中...' : '在线'}</p>
           </div>
         </div>
         <div className="flex items-center space-x-1">
           {!isFullscreen && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={resetPosition}
-              className="h-8 w-8 p-0"
-              title="重置位置"
-            >
+            <Button variant="ghost" size="sm" onClick={resetPosition} className="h-8 w-8 p-0" title="重置位置">
               <RotateCcw className="h-4 w-4" />
             </Button>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            className="h-8 w-8 p-0"
-          >
-            {isFullscreen ? (
-              <Minimize2 className="h-4 w-4" />
-            ) : (
-              <Maximize2 className="h-4 w-4" />
-            )}
+          <Button variant="ghost" size="sm" onClick={() => setIsFullscreen(!isFullscreen)} className="h-8 w-8 p-0">
+            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleChat}
-            className="h-8 w-8 p-0"
-          >
+          <Button variant="ghost" size="sm" onClick={toggleChat} className="h-8 w-8 p-0">
             <X className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className={cn(
-        "p-4",
-        isFullscreen ? "h-[calc(100vh-200px)]" : `h-[${size.height - 160}px]`
-      )}>
+      {/* Messages: Height is now reliably set via inline style */}
+      <ScrollArea className="flex-grow p-4" style={{ height: `calc(100% - 160px)` }}>
         <div className="space-y-4">
+          {/* ... Messages mapping is unchanged ... */}
           {messages.map((message) => (
-            <div
-              key={message.id}
-              className={cn(
-                "flex",
-                message.role === 'user' ? 'justify-end' : 'justify-start'
-              )}
-            >
-              <div
-                className={cn(
-                  "max-w-[80%] rounded-lg px-3 py-2 text-sm",
-                  message.role === 'user'
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
-                )}
-              >
+            <div key={message.id} className={cn("flex", message.role === 'user' ? 'justify-end' : 'justify-start')}>
+              <div className={cn("max-w-[80%] rounded-lg px-3 py-2 text-sm", message.role === 'user' ? "bg-primary text-primary-foreground" : "bg-muted")}>
                 {message.content}
               </div>
             </div>
           ))}
-          
           {isLoading && (
             <div className="flex justify-start">
               <div className="bg-muted rounded-lg px-3 py-2 text-sm">
@@ -273,15 +263,11 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
 
       {/* Suggestions */}
       {suggestions.length > 0 && (
-        <div className="px-4 py-2 border-t border-border">
+        <div className="flex-shrink-0 px-4 py-2 border-t">
+          {/* ... Suggestions mapping is unchanged ... */}
           <div className="flex flex-wrap gap-1">
             {suggestions.map((suggestion, index) => (
-              <Badge
-                key={index}
-                variant="secondary"
-                className="cursor-pointer text-xs hover:bg-accent hover:text-accent-foreground transition-colors"
-                onClick={() => handleSuggestionClick(suggestion)}
-              >
+              <Badge key={index} variant="secondary" className="cursor-pointer text-xs hover:bg-accent" onClick={() => handleSuggestionClick(suggestion)}>
                 {suggestion}
               </Badge>
             ))}
@@ -290,39 +276,23 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
       )}
 
       {/* Input */}
-      <div className="p-4 border-t border-border">
+      <div className="flex-shrink-0 p-4 border-t">
+        {/* ... Input section is unchanged ... */}
         <div className="flex space-x-2">
-          <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
-            <Paperclip className="h-4 w-4" />
-          </Button>
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="询问库存、预测或见解..."
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            className="flex-1"
-          />
-          <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
-            <Mic className="h-4 w-4" />
-          </Button>
-          <Button 
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-            size="sm"
-            className="h-9 w-9 p-0"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+          <Button variant="ghost" size="sm" className="h-9 w-9 p-0"><Paperclip className="h-4 w-4" /></Button>
+          <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="询问库存、预测或见解..." onKeyPress={(e) => e.key === 'Enter' && handleSend()} className="flex-1" />
+          <Button variant="ghost" size="sm" className="h-9 w-9 p-0"><Mic className="h-4 w-4" /></Button>
+          <Button onClick={handleSend} disabled={!input.trim() || isLoading} size="sm" className="h-9 w-9 p-0"><Send className="h-4 w-4" /></Button>
         </div>
       </div>
 
       {/* Resize handle */}
       {!isFullscreen && (
         <div
-          className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize opacity-50 hover:opacity-100 transition-opacity"
+          className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-center justify-center text-muted-foreground/50 hover:text-muted-foreground"
           onMouseDown={handleResizeMouseDown}
         >
-          <Move className="h-3 w-3 transform rotate-45" />
+          <Move className="h-3 w-3 -rotate-45" />
         </div>
       )}
     </div>

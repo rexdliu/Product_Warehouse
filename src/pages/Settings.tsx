@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { 
-  User, Shield, Bell, Palette, Brain, Database, 
+import React, { useEffect, useState } from 'react';
+import {
+  User, Shield, Bell, Palette, Brain, Database,
   Link2, Package, Moon, Sun, Monitor, Smartphone,
-  Mail, MessageSquare, Volume2, Zap, Key, Download,
+  Mail, MessageSquare, Zap, Key, Download,
   Upload, Globe, Wifi, WifiOff, Check, ChevronRight,
   Building2, MapPin, BarChart3, Lock, Sparkles
 } from 'lucide-react';
@@ -34,11 +34,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-const Settings= () => {
-  const [theme, setTheme] = useState('system');
+
+const Settings = () => {
+  // 主题（支持 System/Dark/Light 切换并生效到 <html>）
+  const [theme, setTheme] = useState<'system' | 'light' | 'dark'>('system');
+  // 通知
   const [notifications, setNotifications] = useState({
     email: true,
     push: true,
@@ -47,6 +49,7 @@ const Settings= () => {
     orderUpdates: true,
     systemAlerts: true,
   });
+  // AI 设置
   const [aiSettings, setAiSettings] = useState({
     enabled: true,
     autoSuggestions: true,
@@ -54,38 +57,82 @@ const Settings= () => {
     contextMemory: 'session',
     responseSpeed: 'balanced',
   });
-  const [syncStatus, setSyncStatus] = useState('connected');
-  const [storageUsed] = useState(67);
+  // 同步状态
+  const [syncStatus, setSyncStatus] = useState<'connected' | 'disconnected'>('connected');
+  // 库存告警阈值（滑块展示联动）
+  const [lowStockThreshold, setLowStockThreshold] = useState<number>(20);
+  const [autoReorder, setAutoReorder] = useState<boolean>(false);
+  // 头像上传预览
+  const [avatarUrl, setAvatarUrl] = useState<string>('https://github.com/shadcn.png');
+  // 保存成功提示
+  const [toastVisible, setToastVisible] = useState<boolean>(false);
 
-  const handleNotificationToggle = (key) => {
+  // 主题切换副作用：将 dark 类应用到 html 上；System 模式监听 OS 变化
+  useEffect(() => {
+    const root = document.documentElement;
+    const apply = (mode: 'light' | 'dark') => {
+      if (mode === 'dark') root.classList.add('dark');
+      else root.classList.remove('dark');
+    };
+
+    if (theme === 'system') {
+      const mql = window.matchMedia('(prefers-color-scheme: dark)');
+      apply(mql.matches ? 'dark' : 'light');
+      const handler = (e: MediaQueryListEvent) => apply(e.matches ? 'dark' : 'light');
+      mql.addEventListener('change', handler);
+      return () => mql.removeEventListener('change', handler);
+    } else {
+      apply(theme);
+    }
+  }, [theme]);
+
+  const handleNotificationToggle = (key: keyof typeof notifications) => {
     setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleAIToggle = (key) => {
-    setAiSettings(prev => ({ ...prev, [key]: !prev[key] }));
+  const handleAIToggle = (key: keyof typeof aiSettings) => {
+    setAiSettings(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }));
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // 简单大小限制示例（5MB）
+    if (file.size > 5 * 1024 * 1024) {
+      alert('图片大小不能超过 5MB');
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setAvatarUrl(url);
+  };
+
+  const handleSave = () => {
+    // 此处可提交设置到后端
+    setToastVisible(true);
+    setTimeout(() => setToastVisible(false), 2000);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+        {/* 头部 */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Settings
+              设置
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage your warehouse preferences and configurations
+              管理你的仓库偏好与系统配置
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant={syncStatus === 'connected' ? 'default' : 'destructive'} className="gap-1">
               {syncStatus === 'connected' ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-              {syncStatus === 'connected' ? 'Synced' : 'Offline'}
+              {syncStatus === 'connected' ? '已同步' : '离线'}
             </Badge>
             <Button variant="outline" size="sm">
               <Download className="w-4 h-4 mr-2" />
-              Export Settings
+              导出设置
             </Button>
           </div>
         </div>
@@ -94,77 +141,79 @@ const Settings= () => {
           <TabsList className="grid grid-cols-7 w-full max-w-3xl">
             <TabsTrigger value="profile" className="gap-2">
               <User className="w-4 h-4" />
-              <span className="hidden lg:inline">Profile</span>
+              <span className="hidden lg:inline">个人资料</span>
             </TabsTrigger>
             <TabsTrigger value="warehouse" className="gap-2">
               <Building2 className="w-4 h-4" />
-              <span className="hidden lg:inline">Warehouse</span>
+              <span className="hidden lg:inline">仓库</span>
             </TabsTrigger>
             <TabsTrigger value="ai" className="gap-2">
               <Brain className="w-4 h-4" />
-              <span className="hidden lg:inline">AI Assistant</span>
+              <span className="hidden lg:inline">AI 助手</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="gap-2">
               <Bell className="w-4 h-4" />
-              <span className="hidden lg:inline">Notifications</span>
+              <span className="hidden lg:inline">通知</span>
             </TabsTrigger>
             <TabsTrigger value="appearance" className="gap-2">
               <Palette className="w-4 h-4" />
-              <span className="hidden lg:inline">Appearance</span>
+              <span className="hidden lg:inline">外观</span>
             </TabsTrigger>
             <TabsTrigger value="security" className="gap-2">
               <Shield className="w-4 h-4" />
-              <span className="hidden lg:inline">Security</span>
+              <span className="hidden lg:inline">安全</span>
             </TabsTrigger>
             <TabsTrigger value="integrations" className="gap-2">
               <Link2 className="w-4 h-4" />
-              <span className="hidden lg:inline">Integrations</span>
+              <span className="hidden lg:inline">集成</span>
             </TabsTrigger>
           </TabsList>
 
-          {/* Profile Tab */}
+          {/* 个人资料 */}
           <TabsContent value="profile" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>Update your personal details and preferences</CardDescription>
+                <CardTitle>个人信息</CardTitle>
+                <CardDescription>更新你的基本信息与偏好</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-6">
                   <Avatar className="w-24 h-24 border-4 border-primary/10">
-                    <AvatarImage src="https://github.com/shadcn.png" />
+                    <AvatarImage src={avatarUrl} />
                     <AvatarFallback>JD</AvatarFallback>
                   </Avatar>
                   <div className="space-y-2">
-                    <Button>Change Avatar</Button>
-                    <p className="text-sm text-muted-foreground">JPG, PNG or GIF. Max 5MB</p>
+                    <div className="flex items-center gap-3">
+                      <Input id="avatar-upload" type="file" accept="image/png,image/jpeg,image/gif" onChange={handleAvatarChange} className="max-w-xs" />
+                      <span className="text-sm text-muted-foreground">支持 PNG / JPG / GIF，最大 5MB</span>
+                    </div>
                   </div>
                 </div>
-                
+
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name">姓名</Label>
                     <Input id="name" defaultValue="John Doe" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">邮箱</Label>
                     <Input id="email" type="email" defaultValue="john.doe@warehouse.com" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
+                    <Label htmlFor="phone">电话</Label>
                     <Input id="phone" defaultValue="+1 (555) 123-4567" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="role">Role</Label>
+                    <Label htmlFor="role">角色</Label>
                     <Select defaultValue="manager">
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">Administrator</SelectItem>
-                        <SelectItem value="manager">Warehouse Manager</SelectItem>
-                        <SelectItem value="operator">Operator</SelectItem>
-                        <SelectItem value="viewer">Viewer</SelectItem>
+                        <SelectItem value="admin">管理员</SelectItem>
+                        <SelectItem value="manager">仓库经理</SelectItem>
+                        <SelectItem value="operator">操作员</SelectItem>
+                        <SelectItem value="viewer">只读</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -173,21 +222,21 @@ const Settings= () => {
             </Card>
           </TabsContent>
 
-          {/* Warehouse Tab */}
+          {/* 仓库设置 */}
           <TabsContent value="warehouse" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Warehouse Configuration</CardTitle>
-                <CardDescription>Manage your warehouse settings and preferences</CardDescription>
+                <CardTitle>仓库配置</CardTitle>
+                <CardDescription>管理仓库基础参数与偏好</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="warehouse-name">Warehouse Name</Label>
+                    <Label htmlFor="warehouse-name">仓库名称</Label>
                     <Input id="warehouse-name" defaultValue="Main Distribution Center" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="warehouse-id">Warehouse ID</Label>
+                    <Label htmlFor="warehouse-id">仓库 ID</Label>
                     <Input id="warehouse-id" defaultValue="WH-001-NYC" disabled />
                   </div>
                 </div>
@@ -197,33 +246,33 @@ const Settings= () => {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <MapPin className="w-5 h-5 text-primary" />
-                    Location Settings
+                    位置与时区
                   </h3>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label>Time Zone</Label>
+                      <Label>时区</Label>
                       <Select defaultValue="est">
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="est">Eastern Time (EST)</SelectItem>
-                          <SelectItem value="cst">Central Time (CST)</SelectItem>
-                          <SelectItem value="mst">Mountain Time (MST)</SelectItem>
-                          <SelectItem value="pst">Pacific Time (PST)</SelectItem>
+                          <SelectItem value="est">北美东部时间（EST）</SelectItem>
+                          <SelectItem value="cst">北美中部时间（CST）</SelectItem>
+                          <SelectItem value="mst">北美山地时间（MST）</SelectItem>
+                          <SelectItem value="pst">北美太平洋时间（PST）</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Temperature Unit</Label>
+                      <Label>温度单位</Label>
                       <RadioGroup defaultValue="celsius">
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="celsius" id="celsius" />
-                          <Label htmlFor="celsius">Celsius (°C)</Label>
+                          <Label htmlFor="celsius">摄氏（°C）</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="fahrenheit" id="fahrenheit" />
-                          <Label htmlFor="fahrenheit">Fahrenheit (°F)</Label>
+                          <Label htmlFor="fahrenheit">华氏（°F）</Label>
                         </div>
                       </RadioGroup>
                     </div>
@@ -235,64 +284,53 @@ const Settings= () => {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <Package className="w-5 h-5 text-primary" />
-                    Inventory Settings
+                    库存策略
                   </h3>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label>Low Stock Alert Threshold</Label>
-                        <p className="text-sm text-muted-foreground">Alert when stock falls below this percentage</p>
+                        <Label>低库存告警阈值</Label>
+                        <p className="text-sm text-muted-foreground">当库存低于该百分比时提醒</p>
                       </div>
                       <div className="flex items-center gap-4">
-                        <Slider defaultValue={[20]} max={100} step={5} className="w-32" />
-                        <span className="text-sm font-medium w-12">20%</span>
+                        <Slider value={[lowStockThreshold]} max={100} step={5} className="w-32" onValueChange={(v) => setLowStockThreshold(v[0])} />
+                        <span className="text-sm font-medium w-12 text-right">{lowStockThreshold}%</span>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label>Auto-reorder</Label>
-                        <p className="text-sm text-muted-foreground">Automatically create purchase orders for low stock</p>
+                        <Label>自动补货</Label>
+                        <p className="text-sm text-muted-foreground">当库存不足时自动创建采购单</p>
                       </div>
-                      <Switch />
+                      <Switch checked={autoReorder} onCheckedChange={setAutoReorder} />
                     </div>
                   </div>
                 </div>
 
-                <Separator />
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Storage Usage</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Used: 67GB / 100GB</span>
-                      <span className="text-muted-foreground">{storageUsed}%</span>
-                    </div>
-                    <Progress value={storageUsed} className="h-2" />
-                  </div>
-                </div>
+                {/* 按需求删除“存储用量”板块 */}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* AI Assistant Tab */}
+          {/* AI 助手 */}
           <TabsContent value="ai" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-purple-500" />
-                  AI Assistant Configuration
+                  AI 助手配置
                 </CardTitle>
-                <CardDescription>Customize your AI assistant behavior and capabilities</CardDescription>
+                <CardDescription>自定义 AI 助手的行为与能力</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 rounded-lg border bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
                     <div className="space-y-0.5">
-                      <Label className="text-base">Enable AI Assistant</Label>
-                      <p className="text-sm text-muted-foreground">Get intelligent insights and recommendations</p>
+                      <Label className="text-base">启用 AI 助手</Label>
+                      <p className="text-sm text-muted-foreground">获取智能洞察与建议</p>
                     </div>
-                    <Switch 
-                      checked={aiSettings.enabled} 
+                    <Switch
+                      checked={aiSettings.enabled}
                       onCheckedChange={() => handleAIToggle('enabled')}
                     />
                   </div>
@@ -300,29 +338,29 @@ const Settings= () => {
                   {aiSettings.enabled && (
                     <>
                       <Separator />
-                      
+
                       <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Features</h3>
-                        
+                        <h3 className="text-lg font-semibold">功能</h3>
+
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <div className="space-y-0.5">
-                              <Label>Auto Suggestions</Label>
-                              <p className="text-sm text-muted-foreground">Proactive insights based on your data</p>
+                              <Label>自动建议</Label>
+                              <p className="text-sm text-muted-foreground">基于你的数据主动给出洞察</p>
                             </div>
-                            <Switch 
-                              checked={aiSettings.autoSuggestions} 
+                            <Switch
+                              checked={aiSettings.autoSuggestions}
                               onCheckedChange={() => handleAIToggle('autoSuggestions')}
                             />
                           </div>
-                          
+
                           <div className="flex items-center justify-between">
                             <div className="space-y-0.5">
-                              <Label>Voice Input</Label>
-                              <p className="text-sm text-muted-foreground">Use voice commands to interact</p>
+                              <Label>语音输入</Label>
+                              <p className="text-sm text-muted-foreground">使用语音与系统交互</p>
                             </div>
-                            <Switch 
-                              checked={aiSettings.voiceInput} 
+                            <Switch
+                              checked={aiSettings.voiceInput}
                               onCheckedChange={() => handleAIToggle('voiceInput')}
                             />
                           </div>
@@ -332,51 +370,51 @@ const Settings= () => {
                       <Separator />
 
                       <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Performance</h3>
-                        
+                        <h3 className="text-lg font-semibold">性能</h3>
+
                         <div className="space-y-4">
                           <div className="space-y-2">
-                            <Label>Context Memory</Label>
-                            <Select 
-                              value={aiSettings.contextMemory} 
+                            <Label>上下文记忆</Label>
+                            <Select
+                              value={aiSettings.contextMemory as 'none' | 'session' | 'persistent'}
                               onValueChange={(value) => setAiSettings(prev => ({ ...prev, contextMemory: value }))}
                             >
                               <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="none">No Memory</SelectItem>
-                                <SelectItem value="session">Current Session</SelectItem>
-                                <SelectItem value="persistent">Remember Everything</SelectItem>
+                                <SelectItem value="none">不记忆</SelectItem>
+                                <SelectItem value="session">仅当前会话</SelectItem>
+                                <SelectItem value="persistent">长期记忆</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
 
                           <div className="space-y-2">
-                            <Label>Response Speed</Label>
-                            <RadioGroup 
-                              value={aiSettings.responseSpeed}
+                            <Label>响应速度</Label>
+                            <RadioGroup
+                              value={aiSettings.responseSpeed as 'fast' | 'balanced' | 'accurate'}
                               onValueChange={(value) => setAiSettings(prev => ({ ...prev, responseSpeed: value }))}
                             >
                               <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="fast" id="fast" />
                                 <Label htmlFor="fast" className="flex items-center gap-2">
                                   <Zap className="w-4 h-4" />
-                                  Fast (Less accurate)
+                                  快速（准确度略低）
                                 </Label>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="balanced" id="balanced" />
                                 <Label htmlFor="balanced" className="flex items-center gap-2">
                                   <BarChart3 className="w-4 h-4" />
-                                  Balanced
+                                  平衡
                                 </Label>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="accurate" id="accurate" />
                                 <Label htmlFor="accurate" className="flex items-center gap-2">
                                   <Brain className="w-4 h-4" />
-                                  Accurate (Slower)
+                                  准确（速度较慢）
                                 </Label>
                               </div>
                             </RadioGroup>
@@ -387,19 +425,19 @@ const Settings= () => {
                       <Separator />
 
                       <div className="p-4 rounded-lg bg-muted/50">
-                        <h4 className="font-semibold mb-2">AI Usage Statistics</h4>
+                        <h4 className="font-semibold mb-2">AI 使用统计</h4>
                         <div className="grid grid-cols-3 gap-4 text-center">
                           <div>
                             <p className="text-2xl font-bold text-primary">1,247</p>
-                            <p className="text-sm text-muted-foreground">Queries Today</p>
+                            <p className="text-sm text-muted-foreground">今日查询</p>
                           </div>
                           <div>
                             <p className="text-2xl font-bold text-green-600">94%</p>
-                            <p className="text-sm text-muted-foreground">Accuracy Rate</p>
+                            <p className="text-sm text-muted-foreground">准确率</p>
                           </div>
                           <div>
                             <p className="text-2xl font-bold text-purple-600">2.3s</p>
-                            <p className="text-sm text-muted-foreground">Avg Response</p>
+                            <p className="text-sm text-muted-foreground">平均响应</p>
                           </div>
                         </div>
                       </div>
@@ -410,55 +448,55 @@ const Settings= () => {
             </Card>
           </TabsContent>
 
-          {/* Notifications Tab */}
+          {/* 通知 */}
           <TabsContent value="notifications" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Notification Preferences</CardTitle>
-                <CardDescription>Choose how you want to be notified</CardDescription>
+                <CardTitle>通知偏好</CardTitle>
+                <CardDescription>选择你的通知方式与类型</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Notification Channels</h3>
+                  <h3 className="text-lg font-semibold">通知渠道</h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-4 rounded-lg border">
                       <div className="flex items-center gap-3">
                         <Mail className="w-5 h-5 text-muted-foreground" />
                         <div>
-                          <Label className="text-base">Email Notifications</Label>
-                          <p className="text-sm text-muted-foreground">Receive updates via email</p>
+                          <Label className="text-base">邮箱</Label>
+                          <p className="text-sm text-muted-foreground">通过电子邮件接收更新</p>
                         </div>
                       </div>
-                      <Switch 
-                        checked={notifications.email} 
+                      <Switch
+                        checked={notifications.email}
                         onCheckedChange={() => handleNotificationToggle('email')}
                       />
                     </div>
-                    
+
                     <div className="flex items-center justify-between p-4 rounded-lg border">
                       <div className="flex items-center gap-3">
                         <Bell className="w-5 h-5 text-muted-foreground" />
                         <div>
-                          <Label className="text-base">Push Notifications</Label>
-                          <p className="text-sm text-muted-foreground">Browser and mobile notifications</p>
+                          <Label className="text-base">推送</Label>
+                          <p className="text-sm text-muted-foreground">浏览器与移动端推送通知</p>
                         </div>
                       </div>
-                      <Switch 
-                        checked={notifications.push} 
+                      <Switch
+                        checked={notifications.push}
                         onCheckedChange={() => handleNotificationToggle('push')}
                       />
                     </div>
-                    
+
                     <div className="flex items-center justify-between p-4 rounded-lg border">
                       <div className="flex items-center gap-3">
                         <MessageSquare className="w-5 h-5 text-muted-foreground" />
                         <div>
-                          <Label className="text-base">SMS Notifications</Label>
-                          <p className="text-sm text-muted-foreground">Text messages for critical alerts</p>
+                          <Label className="text-base">短信</Label>
+                          <p className="text-sm text-muted-foreground">为关键告警发送短信</p>
                         </div>
                       </div>
-                      <Switch 
-                        checked={notifications.sms} 
+                      <Switch
+                        checked={notifications.sms}
                         onCheckedChange={() => handleNotificationToggle('sms')}
                       />
                     </div>
@@ -468,37 +506,37 @@ const Settings= () => {
                 <Separator />
 
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Notification Types</h3>
+                  <h3 className="text-lg font-semibold">通知类型</h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label>Low Stock Alerts</Label>
-                        <p className="text-sm text-muted-foreground">When inventory falls below threshold</p>
+                        <Label>低库存告警</Label>
+                        <p className="text-sm text-muted-foreground">当库存低于阈值时</p>
                       </div>
-                      <Switch 
-                        checked={notifications.lowStock} 
+                      <Switch
+                        checked={notifications.lowStock}
                         onCheckedChange={() => handleNotificationToggle('lowStock')}
                       />
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label>Order Updates</Label>
-                        <p className="text-sm text-muted-foreground">New orders and status changes</p>
+                        <Label>订单更新</Label>
+                        <p className="text-sm text-muted-foreground">新订单与状态变更</p>
                       </div>
-                      <Switch 
-                        checked={notifications.orderUpdates} 
+                      <Switch
+                        checked={notifications.orderUpdates}
                         onCheckedChange={() => handleNotificationToggle('orderUpdates')}
                       />
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label>System Alerts</Label>
-                        <p className="text-sm text-muted-foreground">Maintenance and system updates</p>
+                        <Label>系统告警</Label>
+                        <p className="text-sm text-muted-foreground">维护与系统更新</p>
                       </div>
-                      <Switch 
-                        checked={notifications.systemAlerts} 
+                      <Switch
+                        checked={notifications.systemAlerts}
                         onCheckedChange={() => handleNotificationToggle('systemAlerts')}
                       />
                     </div>
@@ -508,15 +546,15 @@ const Settings= () => {
                 <Separator />
 
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Quiet Hours</h3>
+                  <h3 className="text-lg font-semibold">免打扰</h3>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label>Do Not Disturb</Label>
-                      <p className="text-sm text-muted-foreground">Silence non-critical notifications</p>
+                      <Label>请勿打扰</Label>
+                      <p className="text-sm text-muted-foreground">静音非关键通知</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <Input type="time" defaultValue="22:00" className="w-24" />
-                      <span>to</span>
+                      <span>至</span>
                       <Input type="time" defaultValue="07:00" className="w-24" />
                     </div>
                   </div>
@@ -525,17 +563,17 @@ const Settings= () => {
             </Card>
           </TabsContent>
 
-          {/* Appearance Tab */}
+          {/* 外观 */}
           <TabsContent value="appearance" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Appearance Settings</CardTitle>
-                <CardDescription>Customize the look and feel of your dashboard</CardDescription>
+                <CardTitle>外观设置</CardTitle>
+                <CardDescription>自定义仪表盘的外观与风格</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Theme</h3>
-                  <RadioGroup value={theme} onValueChange={setTheme}>
+                  <h3 className="text-lg font-semibold">主题</h3>
+                  <RadioGroup value={theme} onValueChange={(v) => setTheme(v as 'system' | 'light' | 'dark')}>
                     <div className="grid grid-cols-3 gap-4">
                       <Label
                         htmlFor="light"
@@ -543,7 +581,7 @@ const Settings= () => {
                       >
                         <RadioGroupItem value="light" id="light" className="sr-only" />
                         <Sun className="mb-3 h-6 w-6" />
-                        <span>Light</span>
+                        <span>浅色</span>
                       </Label>
                       <Label
                         htmlFor="dark"
@@ -551,7 +589,7 @@ const Settings= () => {
                       >
                         <RadioGroupItem value="dark" id="dark" className="sr-only" />
                         <Moon className="mb-3 h-6 w-6" />
-                        <span>Dark</span>
+                        <span>深色</span>
                       </Label>
                       <Label
                         htmlFor="system"
@@ -559,7 +597,7 @@ const Settings= () => {
                       >
                         <RadioGroupItem value="system" id="system" className="sr-only" />
                         <Monitor className="mb-3 h-6 w-6" />
-                        <span>System</span>
+                        <span>跟随系统</span>
                       </Label>
                     </div>
                   </RadioGroup>
@@ -567,56 +605,23 @@ const Settings= () => {
 
                 <Separator />
 
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Display Density</h3>
-                  <RadioGroup defaultValue="comfortable">
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="compact" id="compact" />
-                        <Label htmlFor="compact">Compact - More information, less spacing</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="comfortable" id="comfortable" />
-                        <Label htmlFor="comfortable">Comfortable - Balanced spacing</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="spacious" id="spacious" />
-                        <Label htmlFor="spacious">Spacious - More breathing room</Label>
-                      </div>
-                    </div>
-                  </RadioGroup>
-                </div>
+                {/* 删除 Display Density 模块 */}
 
                 <Separator />
 
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Accent Color</h3>
-                  <div className="grid grid-cols-6 gap-2">
-                    {['blue', 'purple', 'green', 'orange', 'red', 'pink'].map((color) => (
-                      <button
-                        key={color}
-                        className={`w-full h-10 rounded-md bg-${color}-500 hover:ring-2 hover:ring-offset-2 hover:ring-${color}-500 transition-all`}
-                        style={{ backgroundColor: `var(--${color}-500)` }}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Interface Options</h3>
+                  <h3 className="text-lg font-semibold">界面选项</h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label>Show animations</Label>
+                      <Label>显示动效</Label>
                       <Switch defaultChecked />
                     </div>
                     <div className="flex items-center justify-between">
-                      <Label>Compact sidebar</Label>
+                      <Label>紧凑侧边栏</Label>
                       <Switch />
                     </div>
                     <div className="flex items-center justify-between">
-                      <Label>Show tooltips</Label>
+                      <Label>显示工具提示</Label>
                       <Switch defaultChecked />
                     </div>
                   </div>
@@ -625,12 +630,12 @@ const Settings= () => {
             </Card>
           </TabsContent>
 
-          {/* Security Tab */}
+          {/* 安全 */}
           <TabsContent value="security" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Security Settings</CardTitle>
-                <CardDescription>Manage your account security and access</CardDescription>
+                <CardTitle>安全设置</CardTitle>
+                <CardDescription>管理账户安全与访问</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
@@ -638,23 +643,23 @@ const Settings= () => {
                     <div className="flex items-center gap-3">
                       <Shield className="w-5 h-5 text-green-600" />
                       <div>
-                        <p className="font-medium">Two-Factor Authentication</p>
-                        <p className="text-sm text-muted-foreground">Currently enabled</p>
+                        <p className="font-medium">两步验证</p>
+                        <p className="text-sm text-muted-foreground">当前已启用</p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">Manage</Button>
+                    <Button variant="outline" size="sm">管理</Button>
                   </div>
 
                   <div className="space-y-3">
-                    <h3 className="text-lg font-semibold">Password</h3>
+                    <h3 className="text-lg font-semibold">密码</h3>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm">Last changed 45 days ago</p>
-                        <p className="text-sm text-muted-foreground">Use a strong, unique password</p>
+                        <p className="text-sm">45 天前更新</p>
+                        <p className="text-sm text-muted-foreground">请使用强且唯一的密码</p>
                       </div>
                       <Button variant="outline">
                         <Key className="w-4 h-4 mr-2" />
-                        Change Password
+                        修改密码
                       </Button>
                     </div>
                   </div>
@@ -662,27 +667,27 @@ const Settings= () => {
                   <Separator />
 
                   <div className="space-y-3">
-                    <h3 className="text-lg font-semibold">Active Sessions</h3>
+                    <h3 className="text-lg font-semibold">活跃会话</h3>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between p-3 rounded-lg border">
                         <div className="flex items-center gap-3">
                           <Monitor className="w-5 h-5 text-muted-foreground" />
                           <div>
                             <p className="font-medium">Windows PC - Chrome</p>
-                            <p className="text-sm text-muted-foreground">New York, US • Current session</p>
+                            <p className="text-sm text-muted-foreground">New York, US • 当前会话</p>
                           </div>
                         </div>
-                        <Badge variant="secondary">Active</Badge>
+                        <Badge variant="secondary">活动中</Badge>
                       </div>
                       <div className="flex items-center justify-between p-3 rounded-lg border">
                         <div className="flex items-center gap-3">
                           <Smartphone className="w-5 h-5 text-muted-foreground" />
                           <div>
                             <p className="font-medium">iPhone 14 Pro</p>
-                            <p className="text-sm text-muted-foreground">Brooklyn, US • 2 hours ago</p>
+                            <p className="text-sm text-muted-foreground">Brooklyn, US • 2 小时前</p>
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm">Revoke</Button>
+                        <Button variant="ghost" size="sm">注销</Button>
                       </div>
                     </div>
                   </div>
@@ -690,22 +695,22 @@ const Settings= () => {
                   <Separator />
 
                   <div className="space-y-3">
-                    <h3 className="text-lg font-semibold">API Keys</h3>
+                    <h3 className="text-lg font-semibold">API 密钥</h3>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between p-3 rounded-lg border">
-                        <div>
+                        <div> {/* 实际开发需要在这里调用api */}
                           <p className="font-medium font-mono text-sm">wh_live_k3y_****4a2b</p>
-                          <p className="text-sm text-muted-foreground">Created on Jan 15, 2025</p>
+                          <p className="text-sm text-muted-foreground">创建于 2025-01-15</p>
                         </div>
                         <div className="flex gap-2">
-                          <Button variant="ghost" size="sm">Regenerate</Button>
-                          <Button variant="ghost" size="sm" className="text-destructive">Delete</Button>
+                          <Button variant="ghost" size="sm">重新生成</Button>
+                          <Button variant="ghost" size="sm" className="text-destructive">删除</Button>
                         </div>
                       </div>
                     </div>
                     <Button variant="outline" className="w-full">
                       <Key className="w-4 h-4 mr-2" />
-                      Create New API Key
+                      创建新的 API 密钥
                     </Button>
                   </div>
                 </div>
@@ -713,22 +718,22 @@ const Settings= () => {
             </Card>
           </TabsContent>
 
-          {/* Integrations Tab */}
+          {/* 集成 */}
           <TabsContent value="integrations" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Third-Party Integrations</CardTitle>
-                <CardDescription>Connect your warehouse with external services</CardDescription>
+                <CardTitle>第三方集成</CardTitle>
+                <CardDescription>将仓库系统与外部服务打通</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2">
                   {[
-                    { name: 'Shopify', icon: '🛍️', status: 'connected', description: 'Sync orders and inventory' },
-                    { name: 'QuickBooks', icon: '📊', status: 'connected', description: 'Financial data sync' },
-                    { name: 'Slack', icon: '💬', status: 'disconnected', description: 'Team notifications' },
-                    { name: 'Google Sheets', icon: '📄', status: 'disconnected', description: 'Export reports' },
-                    { name: 'Zapier', icon: '⚡', status: 'disconnected', description: 'Workflow automation' },
-                    { name: 'Microsoft Teams', icon: '👥', status: 'disconnected', description: 'Team collaboration' },
+                    { name: 'Shopify', icon: '🛍️', status: 'connected', description: '同步订单与库存' },
+                    { name: 'QuickBooks', icon: '📊', status: 'connected', description: '财务数据同步' },
+                    { name: 'Slack', icon: '💬', status: 'disconnected', description: '团队通知' },
+                    { name: 'Google Sheets', icon: '📄', status: 'disconnected', description: '导出报表' },
+                    { name: 'Zapier', icon: '⚡', status: 'disconnected', description: '工作流自动化' },
+                    { name: 'Microsoft Teams', icon: '👥', status: 'disconnected', description: '团队协作' },
                   ].map((integration) => (
                     <div key={integration.name} className="flex items-center justify-between p-4 rounded-lg border">
                       <div className="flex items-center gap-3">
@@ -746,11 +751,11 @@ const Settings= () => {
                         {integration.status === 'connected' ? (
                           <>
                             <Check className="w-3 h-3" />
-                            Connected
+                            已连接
                           </>
                         ) : (
                           <>
-                            Connect
+                            连接
                             <ChevronRight className="w-3 h-3" />
                           </>
                         )}
@@ -763,15 +768,22 @@ const Settings= () => {
           </TabsContent>
         </Tabs>
 
-        {/* Save Button */}
+        {/* 底部操作区 */}
         <div className="flex justify-end gap-4 pt-6">
-          <Button variant="outline">Cancel</Button>
-          <Button className="gap-2">
+          <Button variant="outline">取消</Button>
+          <Button className="gap-2" onClick={handleSave}>
             <Check className="w-4 h-4" />
-            Save Changes
+            保存更改
           </Button>
         </div>
       </div>
+
+      {/* 简易 Toast 通知 */}
+      {toastVisible && (
+        <div className="fixed bottom-6 right-6 z-50 rounded-md bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-lg px-4 py-3">
+          设置已保存
+        </div>
+      )}
     </div>
   );
 };

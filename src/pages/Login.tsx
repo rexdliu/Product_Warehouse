@@ -5,14 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [account, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login({ id: '1', name: 'John Smith', email, role: 'Warehouse Manager' });
+    login({ id: '1', name: 'John Smith', account, role: 'Warehouse Manager' });
     navigate('/');
   };
 
@@ -22,9 +22,9 @@ const Login = () => {
         <h1 className="text-2xl font-bold text-center">Login</h1>
         <div className="space-y-2">
           <Input
-            type="email"
-            placeholder="Email"
-            value={email}
+            type="account"
+            placeholder="Account"
+            value={account}
             onChange={(e) => setEmail(e.target.value)}
           />
           <Input

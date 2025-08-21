@@ -5,7 +5,8 @@ interface AuthState {
   user: {
     id: string;
     name: string;
-    email: string;
+    email:string;
+    account: string;
     role: string;
   } | null;
   isAuthenticated: boolean;
@@ -17,7 +18,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: {
     id: '1',
     name: 'John Smith',
-    email: 'john@warehouse.com',
+    email:'john@warehouse.com',
+    account: 'rex',
     role: 'Warehouse Manager'
   },
   isAuthenticated: true,
@@ -194,17 +196,17 @@ export const useAIStore = create<AIState>((set) => ({
   messages: [
     {
       id: '1',
-      content: 'Hello! I\'m your AI warehouse assistant. I can help you with inventory management, predictions, and insights. How can I assist you today?',
+      content: '你好！我是你的 AI 仓库助手。我可以协助你进行库存管理、趋势预测和数据洞察。请问我今天能为你做些什么？',
       role: 'assistant',
       timestamp: new Date()
     }
   ],
-  suggestions: [
-    'Show me low stock items',
-    'Predict next week\'s demand',
-    'Optimize warehouse layout',
-    'Generate inventory report'
-  ],
+ suggestions: [
+  '显示库存不足的商品',
+  '预测下周的需求',
+  '优化仓库布局',
+  '生成库存报告'
+],
   toggleChat: () => set((state) => ({ isOpen: !state.isOpen })),
   addMessage: (content, role) => set((state) => ({
     messages: [

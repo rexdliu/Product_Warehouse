@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { useInventoryStore, useUIStore } from '@/stores';
 import warehouseHero from '@/assets/warehouse-hero.jpg';
 
+
 const Dashboard: React.FC = () => {
   const [timePeriod, setTimePeriod] = useState('weekly');
   const { products } = useInventoryStore();

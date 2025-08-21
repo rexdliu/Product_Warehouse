@@ -51,11 +51,11 @@ const AIAssistantPage: React.FC = () => {
     // Simulate AI response
     setTimeout(() => {
       const responses: { [key: string]: string } = {
-        'low stock': "Based on your current inventory data, I've identified 3 items with critical low stock levels that need immediate attention: iPhone 14 Pro, Office Chair, and Samsung Galaxy S23.",
-        'demand': "I've analyzed your sales data. The demand for 'Electronics' is projected to increase by 25% over the next quarter, especially for new smartphone models.",
-        'optimize': "To improve picking efficiency by 15%, I recommend relocating high-frequency items like 'APPL-IP14P-256' to Zone A, Rack 1-3.",
-        'default': "I'm processing your request. Based on current data, I can generate inventory reports, predict stock needs, or analyze sales trends. What would you like to focus on?"
-      };
+  'low stock': "根据当前库存数据，发现有 3 个商品库存极低，需立即处理：iPhone 14 Pro、办公椅、Samsung Galaxy S23。",
+  'demand': "我已分析你的销售数据。预计“电子产品”类在下个季度的需求将增长 25%，特别是新款智能手机。",
+  'optimize': "为了将拣货效率提升 15%，建议将高频商品如 'APPL-IP14P-256' 移至 A 区，第 1-3 号货架。",
+  'default': "我正在处理你的请求。根据当前数据，我可以生成库存报告、预测补货需求或分析销售趋势。你想重点了解哪一部分？"
+};
       
       const responseKey = Object.keys(responses).find(key => currentInput.toLowerCase().includes(key)) || 'default';
       addMessage(responses[responseKey], 'assistant');
@@ -87,7 +87,7 @@ const AIAssistantPage: React.FC = () => {
     <div className="flex h-[calc(100vh-4rem)]"> {/* Full height minus header */}
       {/* Left Panel: Insights & Suggestions */}
       <div className="hidden lg:flex flex-col w-80 border-r border-border p-4 space-y-6">
-        <h2 className="text-lg font-semibold text-foreground">AI 指挥中心</h2>
+        <h2 className="text-lg font-semibold text-foreground">AI 监控</h2>
         
         {uploadedFile && (
           <Alert>

@@ -151,7 +151,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ timePeriod }) 
       {/* Inventory Trends */}
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>Inventory Trends</CardTitle>
+          <CardTitle>库存/销售趋势</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[300px]">
@@ -163,7 +163,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ timePeriod }) 
       {/* Product Movement */}
       <Card>
         <CardHeader>
-          <CardTitle>Weekly Product Movement</CardTitle>
+          <CardTitle>产品动向</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[250px]">
@@ -175,7 +175,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ timePeriod }) 
       {/* Category Distribution */}
       <Card>
         <CardHeader>
-          <CardTitle>Stock by Category</CardTitle>
+          <CardTitle>库存种类</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[250px]">
