@@ -23,6 +23,7 @@ import Analytics from "./pages/Analytics";
 import WarehouseMap from "./pages/WarehouseMap";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
+import Login from "./pages/Login";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/reports" element={<Reports />} />
             <Route path="/ai" element={<AIAssistantPage />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/login" element={<Login/>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

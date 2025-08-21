@@ -126,8 +126,8 @@ i18n
           // --- 库存页面 ---
             inventory: {
             overview: '库存与销售总览',
-            totalStockQuantity: "库存总数",
-            totalValue: "库存总价值",
+            TotalStockQuantity: "库存总数",
+            TotalValue: "库存总价值",
             categories: '产品种类',
             salesQuery: '经销商销售业绩查询',
             salesDescription: '选择一个经销商以查看其详细的销售历史和总额。',
@@ -136,11 +136,11 @@ i18n
             contactPerson: '联系人',
             contactPhone: '联系电话',
             totalSales: '总销售额',
-            salesHistory: '销售历史记录',
+            SalesHistory: '销售历史记录',
             product: '产品',
-            quantity: '数量',
+            Quantity: '数量',
             amount: '总金额',
-            orderDate: '订单日期',
+            OrderDate: '订单日期',
             noRecords: '未找到该经销商的销售记录。',
           },
           // --- 报告页面 ---

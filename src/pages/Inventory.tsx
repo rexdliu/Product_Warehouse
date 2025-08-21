@@ -19,7 +19,7 @@ import { SalesHistoryFilter } from '@/components/inventory/SalesHistoryFilter';
 import type { DateRange } from 'react-day-picker';
 import { startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { useTranslation } from 'react-i18next';
- import i18n from '@/lib/i18n';
+
 
 // 组件：经销商详情卡片
 const DistributorDetails = ({ distributor }: { distributor: Distributor | null }) => {
@@ -48,9 +48,6 @@ const Inventory: React.FC = () => {
    // 页面级本地状态：当前选中的经销商 + 筛选条件
   const [selectedDistributorId, setSelectedDistributorId] = useState<string | null>(null);
   const [filters, setFilters] = useState<SalesFilters>({});
-
-console.log('i18n language =', i18n.language);
-console.log('demo =', t('inventory.totalStockQuantity'));
 
 
   // 计算总库存指标
@@ -109,7 +106,7 @@ console.log('demo =', t('inventory.totalStockQuantity'));
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Boxes className="h-5 w-5" />
-              {t('inventory.totalStockQuantity')}
+              {t('inventory.TotalStockQuantity')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -122,7 +119,7 @@ console.log('demo =', t('inventory.totalStockQuantity'));
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5" />
-              {t('inventory.totalValue')}
+              {t('inventory.TotalValue')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -216,7 +213,7 @@ console.log('demo =', t('inventory.totalStockQuantity'));
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CalendarIcon className="h-5 w-5" />
-                  {t('inventory.salesHistory')}
+                  {t('inventory.SalesHistory')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -224,9 +221,9 @@ console.log('demo =', t('inventory.totalStockQuantity'));
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t('inventory.product')}</TableHead>
-                      <TableHead className="text-right">{t('inventory.quantity')}</TableHead>
+                      <TableHead className="text-right">{t('inventory.Quantity')}</TableHead>
                       <TableHead className="text-right">{t('inventory.amount')}</TableHead>
-                      <TableHead>{t('inventory.orderDate')}</TableHead>
+                      <TableHead>{t('inventory.OrderDate')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
