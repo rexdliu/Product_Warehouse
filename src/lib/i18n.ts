@@ -31,6 +31,9 @@ i18n
             comingSoon: 'Page - Coming Soon',
             applyFilter: 'Apply Filter',
             selectDateRange: 'Select date range',
+            clearFilters: 'Clear Filters',
+            notifications: 'Notifications',
+            noNotifications: 'No new notifications',
           },
           // --- 侧边栏 ---
           sidebar: {
@@ -58,21 +61,30 @@ i18n
           },
           // --- 库存页面 ---
           inventory: {
-            title: 'Inventory & Sales Overview',
+            overview: 'Inventory & Sales Overview',
             totalStockQuantity: 'Total Stock Quantity',
             totalValue: 'Total Stock Value',
-            productCategories: 'Product Categories',
-            distributorSales: 'Distributor Sales Performance',
-            selectDistributor: 'Select a Distributor',
+            categories: 'Product Categories',
+            salesQuery: 'Distributor Sales Performance',
+            salesDescription: 'Select a distributor to view detailed sales history and totals.',
+            searchPlaceholder: 'Search by distributor name or ID...',
             distributorDetails: 'Distributor Details',
             contactPerson: 'Contact Person',
             contactPhone: 'Contact Phone',
-            totalSalesValue: 'Total Sales Value',
+            totalSales: 'Total Sales Value',
             salesHistory: 'Sales History',
-            productName: 'Product Name',
+            product: 'Product Name',
             quantity: 'Quantity',
-            totalAmount: 'Total Amount',
+            amount: 'Total Amount',
             orderDate: 'Order Date',
+            noRecords: 'No sales records found for this distributor.',
+          },
+          // --- AI助手 ---
+          ai: {
+            title: 'AI Warehouse Assistant',
+            online: 'Online',
+            thinking: 'Thinking...',
+            placeholder: 'Ask about inventory, predictions, or insights...',
           },
           // --- 报告页面 ---
           reports: {
@@ -88,17 +100,19 @@ i18n
       zh: {
         translation: {
           // --- 通用 ---
-          common: {
-            settings: '设置',
-            logout: '退出登录',
-            searchPlaceholder: '搜索产品、订单，或询问AI...',
-            loading: '加载中...',
-            noData: '未找到数据。',
-            comingSoon: '页面 - 敬请期待',
-            applyFilter: '应用筛选',
-            selectDateRange: '选择日期范围',
-            clearFilters: '清除筛选',
-          },
+           common: {
+             settings: '设置',
+             logout: '退出登录',
+             searchPlaceholder: '搜索产品、订单，或询问AI...',
+             loading: '加载中...',
+             noData: '未找到数据。',
+             comingSoon: '页面 - 敬请期待',
+             applyFilter: '应用筛选',
+             selectDateRange: '选择日期范围',
+             clearFilters: '清除筛选',
+             notifications: '通知',
+             noNotifications: '暂无新通知',
+           },
           // --- 侧边栏 ---
           sidebar: {
             dashboard: '仪表盘',
@@ -142,8 +156,15 @@ i18n
             amount: '总金额',
             orderDate: '订单日期',
             noRecords: '未找到该经销商的销售记录。',
-          },
-          // --- 报告页面 ---
+           },
+           // --- AI助手 ---
+           ai: {
+             title: 'AI仓库助手',
+             online: '在线',
+             thinking: '思考中...',
+             placeholder: '询问库存、预测或见解...',
+           },
+           // --- 报告页面 ---
           reports: {
             title: 'AI 智能报告中心',
             generateCustomReport: '生成自定义报告',

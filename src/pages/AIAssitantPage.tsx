@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAIStore } from '@/stores';
-import { useLocaleStore } from '@/stores/localeStore';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +20,7 @@ const AIAssistantPage: React.FC = () => {
     addMessage, 
     setLoading 
   } = useAIStore();
-  const { t } = useLocaleStore();
+  const { t } = useTranslation();
   
   const [input, setInput] = useState('');
   const [isRecording, setIsRecording] = useState(false);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useLocaleStore } from '@/stores/localeStore';
+import { useTranslation } from 'react-i18next';
 import { 
   Package, 
   AlertTriangle, 
@@ -18,7 +18,7 @@ import { useInventoryStore, useUIStore } from '@/stores';
 import warehouseHero from '@/assets/warehouse-hero.jpg';
 
 const Dashboard: React.FC = () => {
-  const { t } = useLocaleStore();
+  const { t } = useTranslation();
   const [timePeriod, setTimePeriod] = useState('weekly');
   const { products } = useInventoryStore();
   const { addNotification } = useUIStore();
