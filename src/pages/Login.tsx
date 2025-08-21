@@ -12,7 +12,7 @@ const Login = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login({ id: '1', name: 'John Smith', account, role: 'Warehouse Manager' });
+    login({ id: '1', name: 'John Smith', email:'john@warehouse.com',account:'REX', role: 'Warehouse Manager' });
     navigate('/');
   };
 
