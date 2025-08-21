@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useUIStore } from '@/stores';
 import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
-import { AIAssistant } from '../ai/AIAssistant';
+import { DraggableAI } from '../ai/DraggableAI';
 import { cn } from '@/lib/utils';
 
 interface AppLayoutProps {
@@ -37,7 +37,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       </div>
 
       {/* AI Assistant - 始终渲染，但根据路径决定是否隐藏 */}
-      <AIAssistant hidden={location.pathname === '/ai'} />    
+      <DraggableAI hidden={location.pathname === '/ai'} />
     </div>
   );
 };

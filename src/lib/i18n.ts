@@ -59,7 +59,7 @@ i18n
           // --- 库存页面 ---
           inventory: {
             title: 'Inventory & Sales Overview',
-            totalStock: 'Total Stock Quantity',
+            totalStockQuantity: 'Total Stock Quantity',
             totalValue: 'Total Stock Value',
             productCategories: 'Product Categories',
             distributorSales: 'Distributor Sales Performance',
@@ -126,8 +126,8 @@ i18n
           // --- 库存页面 ---
             inventory: {
             overview: '库存与销售总览',
-            totalStockQuantity: '库存总数',
-            totalValue: '库存总价值',
+            totalStockQuantity: "库存总数",
+            totalValue: "库存总价值",
             categories: '产品种类',
             salesQuery: '经销商销售业绩查询',
             salesDescription: '选择一个经销商以查看其详细的销售历史和总额。',

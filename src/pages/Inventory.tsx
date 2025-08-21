@@ -12,13 +12,14 @@ import { useInventoryStore, useSalesStore, Distributor } from '@/stores';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
+
 import { Button } from '@/components/ui/button';
 import { User, DollarSign, Package, Calendar as CalendarIcon, Phone, Boxes,  } from 'lucide-react';
 import { SalesHistoryFilter } from '@/components/inventory/SalesHistoryFilter';
 import type { DateRange } from 'react-day-picker';
 import { startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { useTranslation } from 'react-i18next';
+ import i18n from '@/lib/i18n';
 
 // 组件：经销商详情卡片
 const DistributorDetails = ({ distributor }: { distributor: Distributor | null }) => {
@@ -47,7 +48,10 @@ const Inventory: React.FC = () => {
    // 页面级本地状态：当前选中的经销商 + 筛选条件
   const [selectedDistributorId, setSelectedDistributorId] = useState<string | null>(null);
   const [filters, setFilters] = useState<SalesFilters>({});
- 
+
+console.log('i18n language =', i18n.language);
+console.log('demo =', t('inventory.totalStockQuantity'));
+
 
   // 计算总库存指标
   const totalStockQuantity = useMemo(() => products.reduce((sum, p) => sum + p.quantity, 0), [products]);
@@ -105,7 +109,7 @@ const Inventory: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Boxes className="h-5 w-5" />
-              {t('inventory.totalStock')}
+              {t('inventory.totalStockQuantity')}
             </CardTitle>
           </CardHeader>
           <CardContent>
