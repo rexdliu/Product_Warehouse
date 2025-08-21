@@ -13,7 +13,6 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { useTranslation } from 'react-i18next';
 
 interface SalesHistoryFilterProps {
   // 回传筛选条件的回调（父组件接收后，自行决定如何过滤/请求后端）
@@ -21,7 +20,6 @@ interface SalesHistoryFilterProps {
 }
 
 export const SalesHistoryFilter: React.FC<SalesHistoryFilterProps> = ({ onFilterChange }) => {
-  const { t } = useTranslation();
   const [date, setDate] = React.useState<DateRange | undefined>();
   const [productName, setProductName] = React.useState('');
 
@@ -34,7 +32,7 @@ export const SalesHistoryFilter: React.FC<SalesHistoryFilterProps> = ({ onFilter
     <div className="flex flex-col md:flex-row gap-4 items-center p-4 border-b">
       {/* 产品名关键词输入 */}
       <Input
-        placeholder={t('inventory.searchPlaceholder')}
+        placeholder="通过经销商名称或ID搜索..."
         className="max-w-xs"
         value={productName}
         onChange={(e) => setProductName(e.target.value)}
@@ -56,7 +54,7 @@ export const SalesHistoryFilter: React.FC<SalesHistoryFilterProps> = ({ onFilter
                 format(date.from, 'LLL dd, y')
               )
             ) : (
-              <span>{t('common.selectDateRange')}</span>
+              <span>选择日期范围</span>
             )}
           </Button>
         </PopoverTrigger>
@@ -71,7 +69,7 @@ export const SalesHistoryFilter: React.FC<SalesHistoryFilterProps> = ({ onFilter
       </Popover>
 
       {/* 触发回传的按钮（父组件接收并执行实际过滤/发请求） */}
-      <Button onClick={handleApplyFilters}>{t('common.applyFilter')}</Button>
+      <Button onClick={handleApplyFilters}>应用筛选</Button>
     </div>
   );
 };

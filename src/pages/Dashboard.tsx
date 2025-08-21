@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { 
   Package, 
   AlertTriangle, 
@@ -18,7 +17,6 @@ import { useInventoryStore, useUIStore } from '@/stores';
 import warehouseHero from '@/assets/warehouse-hero.jpg';
 
 const Dashboard: React.FC = () => {
-  const { t } = useTranslation();
   const [timePeriod, setTimePeriod] = useState('weekly');
   const { products } = useInventoryStore();
   const { addNotification } = useUIStore();
@@ -33,48 +31,48 @@ const Dashboard: React.FC = () => {
   const recentActivities = [
     {
       id: '1',
-      action: 'Stock Updated',
+      action: '库存已更新',
       item: 'iPhone 14 Pro',
-      time: '2 minutes ago',
+      time: '2分钟前',
       type: 'update'
     },
     {
       id: '2',
-      action: 'Order Processed',
+      action: '订单已处理',
       item: 'Order #WH-2024-045',
-      time: '15 minutes ago',
+      time: '15分钟前',
       type: 'order'
     },
     {
       id: '3',
-      action: 'Low Stock Alert',
+      action: '低库存警报',
       item: 'Samsung Galaxy S23',
-      time: '1 hour ago',
+      time: '1小时前',
       type: 'alert'
     },
     {
       id: '4',
-      action: 'Product Added',
+      action: '新增产品',
       item: 'Office Desk Pro',
-      time: '2 hours ago',
+      time: '2小时前',
       type: 'add'
     }
   ];
 
   const aiInsights = [
     {
-      title: 'Demand Prediction',
-      message: 'iPhone 14 Pro demand expected to increase 25% next week',
+      title: '需求预测',
+      message: '预计下周 iPhone 14 Pro 需求将增加 25%',
       confidence: 92
     },
     {
-      title: 'Stock Optimization',
-      message: 'Move high-demand items to Zone A for 15% efficiency gain',
+      title: '库存优化',
+      message: '将高需求商品移至 A 区可提升 15% 效率',
       confidence: 88
     },
     {
-      title: 'Anomaly Detection',
-      message: 'Unusual return pattern detected for FURN-OC-001',
+      title: '异常检测',
+      message: '检测到 FURN-OC-001 异常退货模式',
       confidence: 85
     }
   ];
@@ -90,9 +88,9 @@ const Dashboard: React.FC = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-accent/60 flex items-center">
           <div className="text-white p-6">
-            <h1 className="text-3xl font-bold mb-2">Warehouse AI Dashboard</h1>
+            <h1 className="text-3xl font-bold mb-2">仓库 AI 仪表盘</h1>
             <p className="text-lg opacity-90">
-              Real-time insights and AI-powered warehouse management
+              实时洞察与 AI 驱动的仓库管理
             </p>
           </div>
         </div>
@@ -101,28 +99,28 @@ const Dashboard: React.FC = () => {
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricsCard
-          title="Total Products"
+          title="产品总数"
           value={totalProducts.toString()}
           change={{ value: '12%', type: 'increase' }}
           icon={Package}
           variant="default"
         />
         <MetricsCard
-          title="Low Stock Alerts"
+          title="低库存警报"
           value={lowStockCount.toString()}
           change={{ value: '3', type: 'decrease' }}
           icon={AlertTriangle}
           variant="warning"
         />
         <MetricsCard
-          title="Pending Orders"
+          title="待处理订单"
           value={pendingOrders.toString()}
           change={{ value: '8%', type: 'increase' }}
           icon={ShoppingCart}
           variant="default"
         />
         <MetricsCard
-          title="Capacity Used"
+          title="仓库容量使用率"
           value={`${warehouseCapacity}%`}
           change={{ value: '5%', type: 'increase' }}
           icon={Warehouse}
@@ -140,10 +138,10 @@ const Dashboard: React.FC = () => {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
               <Clock className="h-5 w-5" />
-              <span>Recent Activities</span>
+              <span>最近活动</span>
             </CardTitle>
             <Button variant="outline" size="sm">
-              View All
+              查看全部
             </Button>
           </CardHeader>
           <CardContent>
@@ -173,11 +171,11 @@ const Dashboard: React.FC = () => {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
               <Brain className="h-5 w-5" />
-              <span>AI Insights</span>
+              <span>AI 洞察</span>
             </CardTitle>
             <Badge variant="secondary" className="bg-gradient-to-r from-primary/10 to-accent/10">
               <TrendingUp className="h-3 w-3 mr-1" />
-              Live
+              实时
             </Badge>
           </CardHeader>
           <CardContent>
@@ -187,7 +185,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-medium">{insight.title}</h4>
                     <Badge variant="outline" className="text-xs">
-                      {insight.confidence}% confident
+                      置信度 {insight.confidence}%
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">{insight.message}</p>

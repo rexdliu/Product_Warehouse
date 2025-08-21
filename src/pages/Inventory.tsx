@@ -4,7 +4,7 @@
 // 2) 页面内通过 useMemo 在内存中做过滤（小数据量）；
 //    —— 大数据量时建议把过滤条件带到后端分页查询（更稳更快）；
 // 3) 日期过滤使用 date-fns 的 startOfDay/endOfDay/isWithinInterval，避免时区边界坑；
-// 4) i18n 使用 useTranslation().t()，替换之前无效的 {('xxx')} 写法。
+// 4) 已移除国际化依赖，直接使用中文文案。
 // src/pages/Inventory.tsx
 import React, { useState, useMemo } from 'react';
 import { useInventoryStore, useSalesStore, Distributor } from '@/stores';
@@ -18,10 +18,9 @@ import { User, DollarSign, Package, Calendar as CalendarIcon, Phone, Boxes,  } f
 import { SalesHistoryFilter } from '@/components/inventory/SalesHistoryFilter';
 import type { DateRange } from 'react-day-picker';
 import { startOfDay, endOfDay, isWithinInterval } from 'date-fns';
-import { useTranslation } from 'react-i18next';
 
 // 组件：经销商详情卡片
-const DistributorDetails = ({ distributor, t }: { distributor: Distributor | null; t: any }) => {
+const DistributorDetails = ({ distributor }: { distributor: Distributor | null }) => {
   if (!distributor) return null;
   return (
     <Card>
@@ -30,8 +29,8 @@ const DistributorDetails = ({ distributor, t }: { distributor: Distributor | nul
         <CardDescription>{distributor.region}</CardDescription>
       </CardHeader>
       <CardContent className="text-sm space-y-2">
-        <p className="flex items-center"><User className="h-4 w-4 mr-2 text-muted-foreground" />{t('inventory.contactPerson')}: {distributor.contactPerson}</p>
-        <p className="flex items-center"><Phone className="h-4 w-4 mr-2 text-muted-foreground" />{t('inventory.contactPhone')}: {distributor.phone}</p>
+        <p className="flex items-center"><User className="h-4 w-4 mr-2 text-muted-foreground" />联系人: {distributor.contactPerson}</p>
+        <p className="flex items-center"><Phone className="h-4 w-4 mr-2 text-muted-foreground" />联系电话: {distributor.phone}</p>
       </CardContent>
     </Card>
   );
@@ -39,8 +38,6 @@ const DistributorDetails = ({ distributor, t }: { distributor: Distributor | nul
 type SalesFilters = { dateRange?: DateRange; productName?: string };
 // 主页面组件
 const Inventory: React.FC = () => {
-  // 国际化钩子(翻译函数)
-    const { t } = useTranslation();
   // 从 zustand store 获取数据和方法
   const { products } = useInventoryStore();
   const { distributors, getSalesByDistributor } = useSalesStore();
@@ -98,7 +95,7 @@ const Inventory: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* ====== 1) 库存总览卡片 ====== */}
-      <h1 className="text-3xl font-bold">{t('inventory.overview')}</h1>
+      <h1 className="text-3xl font-bold">库存与销售总览</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* 总库存数量 */}
@@ -106,7 +103,7 @@ const Inventory: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Boxes className="h-5 w-5" />
-              {t('inventory.TotalStockQuantity')}
+              库存总数
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -119,7 +116,7 @@ const Inventory: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5" />
-              {t('inventory.TotalValue')}
+              库存总价值
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -134,7 +131,7 @@ const Inventory: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
-              {t('inventory.categories')}
+              产品种类
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -146,14 +143,14 @@ const Inventory: React.FC = () => {
       {/* ====== 2) 经销商选择 + 筛选器 ====== */}
       <Card>
         <CardHeader>
-          <CardTitle>{t('inventory.salesQuery')}</CardTitle>
-          <CardDescription>{t('inventory.salesDescription')}</CardDescription>
+          <CardTitle>经销商销售业绩查询</CardTitle>
+          <CardDescription>选择一个经销商以查看其详细的销售历史和总额。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* 经销商下拉选择 */}
           <Select onValueChange={setSelectedDistributorId}>
             <SelectTrigger className="w-full md:w-1/2">
-              <SelectValue placeholder={t('inventory.searchPlaceholder')} />
+              <SelectValue placeholder="通过经销商名称或ID搜索..." />
             </SelectTrigger>
             <SelectContent>
               {distributors.map((d) => (
@@ -178,7 +175,7 @@ const Inventory: React.FC = () => {
                 className="flex items-center gap-2"
               >
                 <CalendarIcon className="h-4 w-4" />
-                {t('common.clearFilters')}
+                清除筛选
               </Button>
             </>
           )}
@@ -190,13 +187,13 @@ const Inventory: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 左侧：经销商信息 + 当前筛选下总销售额 */}
           <div className="lg:col-span-1 space-y-6">
-            <DistributorDetails distributor={selectedDistributor} t={t} />
+            <DistributorDetails distributor={selectedDistributor} />
 
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <DollarSign className="h-5 w-5" />
-                  {t('inventory.totalSales')}
+                  总销售额
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -213,17 +210,17 @@ const Inventory: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CalendarIcon className="h-5 w-5" />
-                  {t('inventory.SalesHistory')}
+                  销售历史记录
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t('inventory.product')}</TableHead>
-                      <TableHead className="text-right">{t('inventory.Quantity')}</TableHead>
-                      <TableHead className="text-right">{t('inventory.amount')}</TableHead>
-                      <TableHead>{t('inventory.OrderDate')}</TableHead>
+                      <TableHead>产品</TableHead>
+                      <TableHead className="text-right">数量</TableHead>
+                      <TableHead className="text-right">总金额</TableHead>
+                      <TableHead>订单日期</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -239,7 +236,7 @@ const Inventory: React.FC = () => {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={4} className="text-center h-24">
-                          {t('inventory.noRecords')}
+                          未找到该经销商的销售记录。
                         </TableCell>
                       </TableRow>
                     )}

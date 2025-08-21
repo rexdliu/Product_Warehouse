@@ -16,7 +16,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { useTranslation } from 'react-i18next';
 import aiIcon from '@/assets/chatBot.svg';
 
 interface DraggableAIProps {
@@ -24,11 +23,10 @@ interface DraggableAIProps {
 }
 
 export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
-  const { t } = useTranslation();
-  const { 
-    isOpen, 
-    isLoading, 
-    messages, 
+  const {
+    isOpen,
+    isLoading,
+    messages,
     suggestions, 
     toggleChat, 
     addMessage, 
@@ -190,9 +188,9 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
             <img src={aiIcon} alt="AI Assistant" className="h-full w-full object-cover" />
           </div>
           <div>
-            <h3 className="font-semibold text-sm">{t('ai.title')}</h3>
+            <h3 className="font-semibold text-sm">AI 仓库助手</h3>
             <p className="text-xs text-muted-foreground">
-              {isLoading ? t('ai.thinking') : t('ai.online')}
+              {isLoading ? '思考中...' : '在线'}
             </p>
           </div>
         </div>
@@ -203,7 +201,7 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
               size="sm"
               onClick={resetPosition}
               className="h-8 w-8 p-0"
-              title="Reset Position"
+              title="重置位置"
             >
               <RotateCcw className="h-4 w-4" />
             </Button>
@@ -300,7 +298,7 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={t('ai.placeholder')}
+            placeholder="询问库存、预测或见解..."
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
             className="flex-1"
           />
