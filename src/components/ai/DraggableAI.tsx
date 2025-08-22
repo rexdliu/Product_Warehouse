@@ -11,6 +11,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { useAIStore } from '@/stores';
+import { useUIStore } from '@/stores';  // 新增导入useUIStore
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +34,9 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
     addMessage,
     setLoading
   } = useAIStore();
+  
+  // 获取AI设置
+  const { aiSettings } = useUIStore();
 
   const [input, setInput] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -183,7 +187,10 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
 
   // --- Component Renders ---
 
-  if (hidden) return null;
+  // 如果hidden属性为true，或者AI未启用且聊天未打开，则不显示组件
+  if (hidden || (!aiSettings.enabled && !isOpen)) {
+    return null;
+  }
 
   if (!isOpen) {
     const handleIconClick = () => {

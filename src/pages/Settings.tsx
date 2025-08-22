@@ -38,7 +38,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {useUIStore} from "@/stores";
 
 const Settings = () => {
-   const { theme: globalTheme, setTheme: setGlobalTheme, sidebarOpen, toggleSidebar } = useUIStore();
+   const { theme: globalTheme, setTheme: setGlobalTheme, sidebarOpen, toggleSidebar, aiSettings, setAISettings } = useUIStore();
   // 主题（支持 System/Dark/Light 切换并生效到 <html>）
   const [theme, setTheme] = useState<'system' | 'light' | 'dark'>(() => {
     const stored = localStorage.getItem('warehouse-settings');
@@ -60,17 +60,10 @@ const Settings = () => {
     orderUpdates: boolean;
     systemAlerts: boolean;
   }
-  interface AISettings {
-    enabled: boolean;
-    autoSuggestions: boolean;
-    voiceInput: boolean;
-    contextMemory: string;
-    responseSpeed: string;
-  }
   interface SettingsData {
     theme: 'system' | 'light' | 'dark';
     notifications: Notifications;
-    aiSettings: AISettings;
+    aiSettings: typeof aiSettings;
     lowStockThreshold: number;
     autoReorder: boolean;
     avatarUrl: string;
@@ -87,14 +80,6 @@ const Settings = () => {
     lowStock: true,
     orderUpdates: true,
     systemAlerts: true,
-  });
-  // AI 设置
-  const [aiSettings, setAiSettings] = useState<AISettings>({
-    enabled: true,
-    autoSuggestions: true,
-    voiceInput: false,
-    contextMemory: 'session',
-    responseSpeed: 'balanced',
   });
   // 同步状态
   const [syncStatus, setSyncStatus] = useState<'connected' | 'disconnected'>('connected');
@@ -136,7 +121,6 @@ useEffect(() => {
         const data = JSON.parse(stored) as Partial<SettingsData>;
         setTheme((data.theme ?? globalTheme) as 'system' | 'light' | 'dark');
         setNotifications(data.notifications ?? notifications);
-        setAiSettings(data.aiSettings ?? aiSettings);
         setLowStockThreshold(data.lowStockThreshold ?? lowStockThreshold);
         setAutoReorder(data.autoReorder ?? autoReorder);
         setAvatarUrl(data.avatarUrl ?? avatarUrl);
@@ -217,7 +201,8 @@ useEffect(() => {
   };
 
   const handleAIToggle = (key: keyof typeof aiSettings) => {
-    setAiSettings(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }));
+    const newSettings = { ...aiSettings, [key]: !aiSettings[key] };
+    setAISettings(newSettings);
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -261,7 +246,7 @@ useEffect(() => {
     if (savedSettings) {
       setTheme(savedSettings.theme);
       setNotifications(savedSettings.notifications);
-      setAiSettings(savedSettings.aiSettings);
+      setAISettings(savedSettings.aiSettings);
       setLowStockThreshold(savedSettings.lowStockThreshold);
       setAutoReorder(savedSettings.autoReorder);
       setAvatarUrl(savedSettings.avatarUrl);
@@ -535,7 +520,7 @@ useEffect(() => {
                             <Label>上下文记忆</Label>
                             <Select
                               value={aiSettings.contextMemory as 'none' | 'session' | 'persistent'}
-                              onValueChange={(value) => setAiSettings(prev => ({ ...prev, contextMemory: value }))}
+                              onValueChange={(value) => setAISettings({ ...aiSettings, contextMemory: value })}
                             >
                               <SelectTrigger>
                                 <SelectValue />
@@ -552,7 +537,7 @@ useEffect(() => {
                             <Label>响应速度</Label>
                             <RadioGroup
                               value={aiSettings.responseSpeed as 'fast' | 'balanced' | 'accurate'}
-                              onValueChange={(value) => setAiSettings(prev => ({ ...prev, responseSpeed: value }))}
+                              onValueChange={(value) => setAISettings({ ...aiSettings, responseSpeed: value })}
                             >
                               <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="fast" id="fast" />

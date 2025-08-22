@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Lightbulb, Package, BarChart3, Bot, Send, Mic, Paperclip, Upload, Volume2, VolumeX } from 'lucide-react';
+import { Lightbulb, Package, BarChart3, Bot, Send, Mic, Paperclip, Upload, Volume2, VolumeX, Plus, History } from 'lucide-react';
 import aiIcon from '@/assets/chatBot.svg';
 
 const AIAssistantPage: React.FC = () => {
@@ -23,6 +23,7 @@ const AIAssistantPage: React.FC = () => {
   const [input, setInput] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -83,12 +84,52 @@ const AIAssistantPage: React.FC = () => {
     }
   };
 
+  const handleNewChat = () => {
+    // In a real implementation, this would call an API to start a new chat session
+    // For now, we'll just show an alert
+    alert('新聊天功能将在后端实现后可用');
+  };
+
+  const handleViewHistory = () => {
+    // In a real implementation, this would fetch chat history from the backend
+    setShowHistory(!showHistory);
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)]"> {/* Full height minus header */}
       {/* Left Panel: Insights & Suggestions */}
       <div className="hidden lg:flex flex-col w-80 border-r border-border p-4 space-y-6">
-        <h2 className="text-lg font-semibold text-foreground">AI 监控</h2>
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold text-foreground">AI 监控</h2>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleNewChat} title="新建聊天">
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleViewHistory} title="查看历史">
+              <History className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
         
+        {showHistory && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">最近聊天</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm space-y-2">
+              <div className="text-muted-foreground text-xs">30天内的聊天记录功能将在后端实现后可用</div>
+              <div className="p-2 rounded border cursor-pointer hover:bg-muted">
+                <div className="font-medium">库存分析请求</div>
+                <div className="text-muted-foreground text-xs">2025-08-20</div>
+              </div>
+              <div className="p-2 rounded border cursor-pointer hover:bg-muted">
+                <div className="font-medium">补货建议</div>
+                <div className="text-muted-foreground text-xs">2025-08-18</div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {uploadedFile && (
           <Alert>
             <Upload className="h-4 w-4" />

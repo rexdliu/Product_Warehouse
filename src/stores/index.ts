@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 // Auth Store
 interface User {
@@ -32,6 +33,13 @@ export const useAuthStore = create<AuthState>((set) => ({
 interface UIState {
   sidebarOpen: boolean;
   theme: 'light' | 'dark';
+  aiSettings: {
+    enabled: boolean;
+    autoSuggestions: boolean;
+    voiceInput: boolean;
+    contextMemory: string;
+    responseSpeed: string;
+  };
   notifications: Array<{
     id: string;
     title: string;
@@ -40,74 +48,75 @@ interface UIState {
     timestamp: Date;
   }>;
   setTheme: (theme: 'light' | 'dark') => void;
+  setAISettings: (settings: Partial<UIState['aiSettings']>) => void;
   toggleSidebar: () => void;
   toggleTheme: () => void;
   addNotification: (notification: Omit<UIState['notifications'][0], 'id' | 'timestamp'>) => void;
   removeNotification: (id: string) => void;
 }
 
-export const useUIStore = create<UIState>((set) => ({
-  sidebarOpen: true,
-  theme: 'light',
-  notifications: [
+export const useUIStore = create<UIState>()(
+  persist(
+    (set) => ({
+      sidebarOpen: true,
+      theme: 'light',
+      aiSettings: {
+        enabled: true,
+        autoSuggestions: true,
+        voiceInput: false,
+        contextMemory: 'session',
+        responseSpeed: 'balanced',
+      },
+      notifications: [
+        {
+          id: '1',
+          title: 'Low Stock Alert',
+          message: 'iPhone 14 Pro stock is running low (5 units remaining)',
+          type: 'warning',
+          timestamp: new Date()
+        },
+        {
+          id: '2',
+          title: 'Order Completed',
+          message: 'Order #WH-2024-001 has been successfully processed',
+          type: 'success',
+          timestamp: new Date()
+        }
+      ],
+      setTheme: (theme) => {
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        set({ theme });
+      },
+      setAISettings: (settings) => set((state) => {
+        const newSettings = { ...state.aiSettings, ...settings };
+        return { aiSettings: newSettings };
+      }),
+      toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+      toggleTheme: () => set((state) => {
+        const newTheme = state.theme === 'light' ? 'dark' : 'light';
+        document.documentElement.classList.toggle('dark', newTheme === 'dark');
+        return { theme: newTheme };
+      }),
+      addNotification: (notification) => set((state) => ({
+        notifications: [
+          { ...notification, id: Date.now().toString(), timestamp: new Date() },
+          ...state.notifications
+        ]
+      })),
+      removeNotification: (id) => set((state) => ({
+        notifications: state.notifications.filter(n => n.id !== id)
+      })),
+    }),
     {
-      id: '1',
-      title: 'Low Stock Alert',
-      message: 'iPhone 14 Pro stock is running low (5 units remaining)',
-      type: 'warning',
-      timestamp: new Date()
-    },
-    {
-      id: '2',
-      title: 'Order Completed',
-      message: 'Order #WH-2024-001 has been successfully processed',
-      type: 'success',
-      timestamp: new Date()
+      name: 'warehouse-settings',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({ 
+        theme: state.theme, 
+        aiSettings: state.aiSettings 
+      }),
     }
-  ],
-  toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
-  setTheme: (theme) => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-    set({ theme });
-    const stored = localStorage.getItem('warehouse-settings');
-    if (stored) {
-      try {
-        const data = JSON.parse(stored);
-        localStorage.setItem('warehouse-settings', JSON.stringify({ ...data, theme }));
-      } catch {
-        localStorage.setItem('warehouse-settings', JSON.stringify({ theme }));
-      }
-    } else {
-      localStorage.setItem('warehouse-settings', JSON.stringify({ theme }));
-    }
-  },
-  toggleTheme: () => set((state) => {
-    const newTheme = state.theme === 'light' ? 'dark' : 'light';
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
-    const stored = localStorage.getItem('warehouse-settings');
-    if (stored) {
-      try {
-        const data = JSON.parse(stored);
-        localStorage.setItem('warehouse-settings', JSON.stringify({ ...data, theme: newTheme }));
-      } catch {
-        localStorage.setItem('warehouse-settings', JSON.stringify({ theme: newTheme }));
-      }
-    } else {
-      localStorage.setItem('warehouse-settings', JSON.stringify({ theme: newTheme }));
-    }
-    return { theme: newTheme };
-  }),
-  addNotification: (notification) => set((state) => ({
-    notifications: [
-      { ...notification, id: Date.now().toString(), timestamp: new Date() },
-      ...state.notifications
-    ]
-  })),
-  removeNotification: (id) => set((state) => ({
-    notifications: state.notifications.filter(n => n.id !== id)
-  })),
-}));
-
+  )
+);
 
 // --- 库存 Store (已更新) ---
 export interface Product { // 定义产品接口
