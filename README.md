@@ -44,14 +44,22 @@ WarehouseAI 是一个现代化的仓库管理系统，集成了人工智能助�
 
 ## 🛠 技术栈
 
-- **前端**: React 18, TypeScript, Vite
+### 前端技术栈
+- **框架**: React 18, TypeScript, Vite
 - **UI 组件库**: shadcn/ui, Tailwind CSS
 - **状态管理**: Zustand
 - **路由**: React Router v6
 - **数据可视化**: Chart.js
 - **图标**: Lucide React
-- **后端**: FastAPI (Python)
-- **数据库**: 待定 (可集成 PostgreSQL, MySQL 等)
+
+### 后端技术栈
+- **框架**: FastAPI (Python)
+- **数据库**: SQLite (默认) / PostgreSQL (可选)
+- **ORM**: SQLAlchemy
+- **认证**: JWT/OAuth2
+- **异步任务**: Celery + Redis
+- **AI服务**: OpenAI API / 类似服务
+- **数据库迁移**: Alembic
 
 ## 🚀 快速开始
 
@@ -79,14 +87,32 @@ npm run build
 
 ### 后端开发
 
-1. 安装 Python 依赖:
+1. 创建虚拟环境:
 ```bash
-pip install fastapi uvicorn
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# 或
+venv\Scripts\activate  # Windows
 ```
 
-2. 启动后端服务:
+2. 安装 Python 依赖:
 ```bash
-python main.py
+pip install -r requirements.txt
+```
+
+3. 数据库迁移:
+```bash
+alembic upgrade head
+```
+
+4. 启动后端服务:
+```bash
+uvicorn app.main:app --reload
+```
+
+5. 启动 Celery 异步任务处理器 (新终端):
+```bash
+celery -A app.tasks.celery_app worker --loglevel=info
 ```
 
 ## 📋 功能实现状态
@@ -100,15 +126,20 @@ python main.py
 - [x] 设置页面完整功能界面
 - [x] 可拖拽AI助手组件
 
+### 后端已完成功能
+- [x] 微服务架构设计
+- [x] 用户认证和授权系统
+- [x] 数据持久化 (数据库集成)
+- [x] 完整的RESTful API
+- [x] 数据库迁移框架
+- [x] 异步任务处理框架
+
 ### 需要完善的后端功能
-- [ ] 用户认证和授权系统
-- [ ] 数据持久化 (数据库集成)
 - [ ] AI服务集成 (OpenAI/类似服务)
 - [ ] 文件上传和处理服务
 - [ ] 语音识别服务
 - [ ] 实时通知推送 (WebSocket)
 - [ ] 第三方服务集成API
-- [ ] 完整的RESTful API
 
 ## 🎯 详细功能说明
 
@@ -165,6 +196,93 @@ AI助手是WarehouseAI的核心功能之一，提供了智能化的仓库管理�
 
 项目维护者: [Your Name]
 项目仓库: [Repository URL]
+
+## 🏗 后端架构
+
+后端采用微服务架构设计，包含以下核心服务:
+
+```
+logistics_warehouse/
+├── app/
+│   ├── __init__.py
+│   ├── main.py                 # FastAPI主入口
+│   ├── core/                   # 核心配置
+│   │   ├── __init__.py
+│   │   ├── config.py           # 配置管理
+│   │   ├── security.py         # 安全/认证
+│   │   ├── database.py         # 数据库连接
+│   │   └── dependencies.py     # 依赖注入
+│   │
+│   ├── api/                    # API路由
+│   │   ├── __init__.py
+│   │   ├── v1/
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py         # 认证接口
+│   │   │   ├── products.py     # 产品管理
+│   │   │   ├── inventory.py    # 库存管理
+│   │   │   ├── warehouse.py    # 仓库管理
+│   │   │   ├── analytics.py    # 数据分析
+│   │   │   └── ai_rag.py       # AI RAG接口
+│   │   └── deps.py             # API依赖
+│   │
+│   ├── models/                 # 数据模型
+│   │   ├── __init__.py
+│   │   ├── product.py
+│   │   ├── inventory.py
+│   │   ├── warehouse.py
+│   │   └── user.py
+│   │
+│   ├── schemas/                # Pydantic模型
+│   │   ├── __init__.py
+│   │   ├── product.py
+│   │   ├── inventory.py
+│   │   ├── warehouse.py
+│   │   └── response.py
+│   │
+│   ├── crud/                   # CRUD操作
+│   │   ├── __init__.py
+│   │   ├── base.py
+│   │   ├── product.py
+│   │   ├── inventory.py
+│   │   └── warehouse.py
+│   │
+│   ├── services/               # 业务逻辑层
+│   │   ├── __init__.py
+│   │   ├── product_service.py
+│   │   ├── inventory_service.py
+│   │   ├── warehouse_service.py
+│   │   ├── analytics_service.py
+│   │   └── rag_service.py
+│   │
+│   ├── tasks/                  # Celery异步任务
+│   │   ├── __init__.py
+│   │   ├── celery_app.py
+│   │   ├── inventory_tasks.py
+│   │   └── analytics_tasks.py
+│   │
+│   └── utils/                  # 工具函数
+│       ├── __init__.py
+│       ├── hologres.py
+│       ├── cache.py
+│       └── exceptions.py
+│
+├── alembic/                    # 数据库迁移
+├── tests/                      # 测试
+├── docker-compose.yml
+├── Dockerfile
+├── requirements.txt
+└── .env
+```
+
+核心服务模块:
+1. **API网关服务** (API Gateway Service) - 统一入口管理
+2. **认证服务** (Authentication Service) - JWT/OAuth2认证
+3. **产品管理服务** (Product Management Service) - 产品信息维护
+4. **库存服务** (Inventory Service) - 库存水平跟踪
+5. **仓库操作服务** (Warehouse Operations Service) - 入库/出库管理
+6. **AI/RAG服务** (AI/RAG Service) - 智能问答接口
+7. **分析服务** (Analytics Service) - 数据分析
+8. **通知服务** (Notification Service) - 实时消息推送
 
 ## 📄 许可证
 

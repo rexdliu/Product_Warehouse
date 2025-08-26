@@ -1,8 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-import os
 
 app = FastAPI(title="Product Warehouse API", version="1.0.0")
 
@@ -15,12 +12,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 挂载静态文件目录（前端构建后的文件）
-# 如果存在前端构建目录，则挂载静态文件服务
-if os.path.exists("dist"):
-    app.mount("/", StaticFiles(directory="dist", html=True), name="frontend")
-
-@app.get("/api/")
+@app.get("/")
 def read_root():
     return {"message": "Welcome to Product Warehouse API"}
 
@@ -38,10 +30,6 @@ def get_products():
     ]
     return {"products": products}
 
-# 为所有未匹配到的路径提供前端应用（支持前端路由）
-# 注意：这个端点应该放在所有API路由之后
-if os.path.exists("dist"):
-    @app.get("/{full_path:path}")
-    async def serve_frontend(full_path: str):
-        # 返回前端应用的入口文件
-        return FileResponse("dist/index.html")
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8001)

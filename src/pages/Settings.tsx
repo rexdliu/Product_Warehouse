@@ -38,20 +38,20 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {useUIStore} from "@/stores";
 
 const Settings = () => {
-   const { theme: globalTheme, setTheme: setGlobalTheme, sidebarOpen, toggleSidebar, aiSettings, setAISettings } = useUIStore();
-  // 主题（支持 System/Dark/Light 切换并生效到 <html>）
-  const [theme, setTheme] = useState<'system' | 'light' | 'dark'>(() => {
-    const stored = localStorage.getItem('warehouse-settings');
-    if (stored) {
-      try {
-        const data = JSON.parse(stored) as { theme?: 'system' | 'light' | 'dark' };
-        return (data.theme ?? globalTheme) as 'system' | 'light' | 'dark';
-      } catch {
-        return globalTheme as 'light' | 'dark';
-      }
-    }
-    return globalTheme as 'light' | 'dark';
-  });
+   const { 
+    theme: globalTheme, 
+    setTheme: setGlobalTheme, 
+    sidebarOpen, 
+    toggleSidebar, 
+    aiSettings, 
+    setAISettings 
+  } = useUIStore();
+  
+  // 保持本地状态，但确保与全局状态同步
+  const [theme, setTheme] = useState<'system' | 'light' | 'dark'>(
+    globalTheme
+  );
+  
   interface Notifications {
     email: boolean;
     push: boolean;
@@ -90,8 +90,10 @@ const Settings = () => {
   const [avatarUrl, setAvatarUrl] = useState<string>('https://github.com/shadcn.png');
   // 保存成功提示
  // 界面选项
-  const [showAnimations, setShowAnimations] = useState<boolean>(true);
+const [showAnimations, setShowAnimations] = useState<boolean>(true);
+  
   const [compactSidebar, setCompactSidebar] = useState<boolean>(false);
+  
   const [showTooltips, setShowTooltips] = useState<boolean>(true);
   // 保存/取消提示
   const [toast, setToast] = useState<{ visible: boolean; message: string }>({ visible: false, message: '' });
@@ -104,6 +106,7 @@ const Settings = () => {
       else root.classList.remove('dark');
     };
 
+
     if (theme === 'system') {
       const mql = window.matchMedia('(prefers-color-scheme: dark)');
       apply(mql.matches ? 'dark' : 'light');
@@ -114,75 +117,31 @@ const Settings = () => {
       apply(theme);
     }
   }, [theme]);
-useEffect(() => {
-    const stored = localStorage.getItem('warehouse-settings');
-    if (stored) {
-      try {
-        const data = JSON.parse(stored) as Partial<SettingsData>;
-        setTheme((data.theme ?? globalTheme) as 'system' | 'light' | 'dark');
-        setNotifications(data.notifications ?? notifications);
-        setLowStockThreshold(data.lowStockThreshold ?? lowStockThreshold);
-        setAutoReorder(data.autoReorder ?? autoReorder);
-        setAvatarUrl(data.avatarUrl ?? avatarUrl);
-        setShowAnimations(data.showAnimations ?? true);
-        setCompactSidebar(data.compactSidebar ?? false);
-        setShowTooltips(data.showTooltips ?? true);
-        setSavedSettings({
-          theme: data.theme ?? globalTheme,
-          notifications: data.notifications ?? notifications,
-          aiSettings: data.aiSettings ?? aiSettings,
-          lowStockThreshold: data.lowStockThreshold ?? lowStockThreshold,
-          autoReorder: data.autoReorder ?? autoReorder,
-          avatarUrl: data.avatarUrl ?? avatarUrl,
-          showAnimations: data.showAnimations ?? true,
-          compactSidebar: data.compactSidebar ?? false,
-          showTooltips: data.showTooltips ?? true,
-        });
-      } catch {
-        setSavedSettings({
-          theme: globalTheme,
-          notifications,
-          aiSettings,
-          lowStockThreshold,
-          autoReorder,
-          avatarUrl,
-          showAnimations,
-          compactSidebar,
-          showTooltips,
-        });
-      }
-    } else {
-      setSavedSettings({
-        theme: globalTheme,
-        notifications,
-        aiSettings,
-        lowStockThreshold,
-        autoReorder,
-        avatarUrl,
-        showAnimations,
-        compactSidebar,
-        showTooltips,
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Sync local theme state when global theme changes (e.g., header toggle)
+  
+  // 当全局主题变化时（例如通过persist中间件恢复），更新本地状态
   useEffect(() => {
-    const stored = localStorage.getItem('warehouse-settings');
-    if (stored) {
-      try {
-        const data = JSON.parse(stored) as Partial<SettingsData>;
-        setTheme((data.theme ?? globalTheme) as 'system' | 'light' | 'dark');
-        setSavedSettings(prev => prev ? { ...prev, theme: data.theme ?? globalTheme } : prev);
-        return;
-      } catch {
-        // fall through to set from globalTheme
-      }
-    }
-    setTheme(globalTheme as 'light' | 'dark');
-    setSavedSettings(prev => prev ? { ...prev, theme: globalTheme } : prev);
+    setTheme(globalTheme);
   }, [globalTheme]);
+  
+  // Auto-save settings when they change
+useEffect(() => {
+  const timer = setTimeout(() => {
+    const currentSettings = {
+      theme,
+      notifications,
+      aiSettings,
+      lowStockThreshold,
+      autoReorder,
+      avatarUrl,
+      showAnimations,
+      compactSidebar,
+      showTooltips,
+    };
+    setSavedSettings(currentSettings);
+  }, 500); // 500ms debounce
+
+  return () => clearTimeout(timer);
+}, [theme, notifications, aiSettings, lowStockThreshold, autoReorder, avatarUrl, showAnimations, compactSidebar, showTooltips]);
 
   useEffect(() => {
     document.body.classList.toggle('no-animations', !showAnimations);
@@ -232,7 +191,6 @@ useEffect(() => {
       compactSidebar,
       showTooltips,
     };
-    localStorage.setItem('warehouse-settings', JSON.stringify(data));
     setSavedSettings(data);
     const desiredTheme = theme === 'system'
       ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
@@ -246,17 +204,12 @@ useEffect(() => {
     if (savedSettings) {
       setTheme(savedSettings.theme);
       setNotifications(savedSettings.notifications);
-      setAISettings(savedSettings.aiSettings);
       setLowStockThreshold(savedSettings.lowStockThreshold);
       setAutoReorder(savedSettings.autoReorder);
       setAvatarUrl(savedSettings.avatarUrl);
       setShowAnimations(savedSettings.showAnimations);
       setCompactSidebar(savedSettings.compactSidebar);
       setShowTooltips(savedSettings.showTooltips);
-      const desiredTheme = savedSettings.theme === 'system'
-        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-        : savedSettings.theme;
-      setGlobalTheme(desiredTheme);
     }
     setToast({ visible: true, message: '已放弃更改并恢复到上次保存' });
     setTimeout(() => setToast({ visible: false, message: '' }), 2000);

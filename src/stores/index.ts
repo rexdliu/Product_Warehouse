@@ -32,7 +32,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 // UI Store
 interface UIState {
   sidebarOpen: boolean;
-  theme: 'light' | 'dark';
+  theme: 'light' | 'dark' | 'system';
+  showAnimations: boolean;
+  showTooltips: boolean;
   aiSettings: {
     enabled: boolean;
     autoSuggestions: boolean;
@@ -47,7 +49,9 @@ interface UIState {
     type: 'info' | 'warning' | 'error' | 'success';
     timestamp: Date;
   }>;
-  setTheme: (theme: 'light' | 'dark') => void;
+  setTheme: (theme: 'light' | 'dark' | 'system') => void;
+  setShowAnimations: (show: boolean) => void;
+  setShowTooltips: (show: boolean) => void;
   setAISettings: (settings: Partial<UIState['aiSettings']>) => void;
   toggleSidebar: () => void;
   toggleTheme: () => void;
@@ -59,7 +63,9 @@ export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
       sidebarOpen: true,
-      theme: 'light',
+      theme: 'system', // 默认跟随系统，更现代的做法
+      showAnimations: true,
+      showTooltips: true,
       aiSettings: {
         enabled: true,
         autoSuggestions: true,
@@ -83,10 +89,9 @@ export const useUIStore = create<UIState>()(
           timestamp: new Date()
         }
       ],
-      setTheme: (theme) => {
-        document.documentElement.classList.toggle('dark', theme === 'dark');
-        set({ theme });
-      },
+      setTheme: (theme) => set({ theme }),
+      setShowAnimations: (show) => set({ showAnimations: show }),
+      setShowTooltips: (show) => set({ showTooltips: show }),
       setAISettings: (settings) => set((state) => {
         const newSettings = { ...state.aiSettings, ...settings };
         return { aiSettings: newSettings };
@@ -110,9 +115,12 @@ export const useUIStore = create<UIState>()(
     {
       name: 'warehouse-settings',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ 
+     partialize: (state) => ({ 
         theme: state.theme, 
-        aiSettings: state.aiSettings 
+        aiSettings: state.aiSettings,
+        sidebarOpen: state.sidebarOpen,
+        showAnimations: state.showAnimations,
+        showTooltips: state.showTooltips,
       }),
     }
   )
