@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # JWT配置
     SECRET_KEY: str = "your-secret-key-here"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10
     
     # CORS配置
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:5173"]

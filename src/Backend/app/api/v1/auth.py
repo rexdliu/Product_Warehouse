@@ -95,6 +95,11 @@ def register_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The user with this email already exists in the system.",
         )
-    
+    user =user_crud.get_by_phone(db, phone=user_in.phone)
+    if user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The user with this phone number already exists in the system.",
+        )
     user = user_crud.create(db, obj_in=user_in)
     return user

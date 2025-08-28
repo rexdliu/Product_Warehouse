@@ -13,7 +13,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.crud import user as user_crud
-from app.schemas.user import UserCreate, UserInDB, UserSettings, UserSettingsUpdate
+from app.schemas.user import UserCreate, UserInDB, UserSettings, UserSettingsUpdate, UserPasswordUpdate
+from app.core.security import verify_password, get_password_hash
 # 依赖项导入
 from app.api.deps import get_current_active_user
 
@@ -56,6 +57,24 @@ def read_user_me(
         UserInDB: 当前用户信息
     """
     return current_user
+
+@router.put("/me/password")
+def update_password(
+    *,
+    db: Session = Depends(get_db),
+    password_data: UserPasswordUpdate,
+    current_user: UserInDB = Depends(get_current_active_user)
+):
+    """
+    更新用户密码
+    """
+    if not verify_password(password_data.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect password")
+    hashed_password = get_password_hash(password_data.new_password)
+    current_user.hashed_password = hashed_password
+    db.add(current_user)
+    db.commit()
+    return {"msg": "Password updated successfully"}
 
 @router.get("/settings", response_model=UserSettings)
 def read_user_settings(

@@ -43,6 +43,18 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             Optional[User]: 用户对象或 None
         """
         return db.query(User).filter(User.email == email).first()
+    def get_by_phone(self, db: Session, *, phone: str) -> Optional[User]:
+        """
+        根据手机号获取用户
+        
+        Args:
+            db: 数据库会话
+            phone: 手机号
+            
+        Returns:
+            Optional[User]: 用户对象或 None
+        """
+        return db.query(User).filter(User.phone == phone).first()
 
     def create(self, db: Session, *, obj_in: UserCreate) -> User:
         """
@@ -58,6 +70,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         db_obj = User(
             username=obj_in.username,
             email=obj_in.email,
+            phone=obj_in.phone,
             hashed_password=get_password_hash(obj_in.password),
             is_active=True,
         )

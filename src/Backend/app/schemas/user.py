@@ -58,6 +58,12 @@ class UserSettingsUpdate(UserSettings):
     """用户设置更新模型"""
     pass
 
+# 用户密码更新模型
+class UserPasswordUpdate(BaseModel):
+    """用户密码更新模型"""
+    current_password: str
+    new_password: str
+
 # 登录模型
 class LoginRequest(BaseModel):
     """登录请求模型"""
