@@ -18,7 +18,7 @@ import warehouseHero from '@/assets/warehouse-hero.jpg';
 
 
 const Dashboard: React.FC = () => {
-  const [timePeriod, setTimePeriod] = useState('weekly');
+  const [timePeriod, setTimePeriod] = useState<'weekly' | 'daily' | 'monthly'>('weekly');
   const { products } = useInventoryStore();
   const { addNotification } = useUIStore();
 
@@ -129,8 +129,26 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
-      {/* Charts */}
-      <DashboardCharts timePeriod={timePeriod} />
+     {/* 2. 将图表用 Card 包裹，并添加切换按钮 */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>销售与库存趋势</CardTitle>
+          <div className="flex items-center space-x-2">
+            <Button variant={timePeriod === 'daily' ? 'secondary' : 'outline'} size="sm" onClick={() => setTimePeriod('daily')}>
+              按天
+            </Button>
+            <Button variant={timePeriod === 'weekly' ? 'secondary' : 'outline'} size="sm" onClick={() => setTimePeriod('weekly')}>
+              按周
+            </Button>
+            <Button variant={timePeriod === 'monthly' ? 'secondary' : 'outline'} size="sm" onClick={() => setTimePeriod('monthly')}>
+              按月
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="pl-2 pt-6">
+          <DashboardCharts timePeriod={timePeriod} />
+        </CardContent>
+      </Card>
 
       {/* Bottom Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
