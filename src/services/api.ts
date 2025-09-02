@@ -1,31 +1,26 @@
 // src/services/api.ts
-const API_BASE_URL = 'http://127.0.0.1:8000';
+// 使用相对路径配合 Vite 代理，避免端口差异
 
-interface Product {
+export interface Product {
   id: number;
   name: string;
-  quantity: number;
 }
 
-interface HealthCheckResponse {
+export interface HealthCheckResponse {
   status: string;
-}
-
-interface ProductsResponse {
-  products: Product[];
 }
 
 class ApiService {
   async healthCheck(): Promise<HealthCheckResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/health`);
+    const response = await fetch(`/health`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     return response.json();
   }
 
-  async getProducts(): Promise<ProductsResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/products`);
+  async getProducts(): Promise<Product[]> {
+    const response = await fetch(`/api/v1/products`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

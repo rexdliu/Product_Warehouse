@@ -77,3 +77,18 @@
 
 ### 新增 (Added)
 - 创建变更日志文件 CHANGELOG.md
+## 2025-09-02
+
+### Improved frontend-backend integration and DX
+
+- Backend: Added `/api/v1/health` for versioned health checks (`src/Backend/app/main.py`).
+- Backend: Initialized database tables on startup for local dev using SQLite (`on_startup` in `src/Backend/app/main.py`).
+- Backend: Broadened default CORS origins to include `localhost:8003` and `127.0.0.1:8003` (`src/Backend/app/core/config.py`).
+- Frontend: Switched API calls to relative paths and aligned routes with backend (`/health`, `/api/v1/products`) in `src/services/api.ts`.
+- Frontend: Updated `ApiTestComponent` to consume product array directly and removed non-existent `quantity` field (`src/components/ApiTestComponent.tsx`).
+- Dev server: Updated Vite proxy to route `/api/v1` and `/health` to backend at `127.0.0.1:8000` (`vite.config.ts`).
+- Secrets: Set `SECRET_KEY=Rex1234` and added `BACKEND_CORS_ORIGINS` to `.env`.
+
+Notes:
+- RDS MySQL is not required for these changes; local SQLite auto-creates tables during development. Replace `DATABASE_URL` when RDS is ready.
+- Frontend no longer expects `quantity` on product; an inventory summary endpoint can be added later when DB is connected.

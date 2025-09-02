@@ -1,12 +1,6 @@
 // src/components/ApiTestComponent.tsx
 import React, { useState, useEffect } from 'react';
-import { apiService } from '@/services/api';
-
-interface Product {
-  id: number;
-  name: string;
-  quantity: number;
-}
+import { apiService, Product } from '@/services/api';
 
 const ApiTestComponent: React.FC = () => {
   const [healthStatus, setHealthStatus] = useState<string>('');
@@ -24,9 +18,9 @@ const ApiTestComponent: React.FC = () => {
         const health = await apiService.healthCheck();
         setHealthStatus(health.status);
         
-        // 获取产品数据
+        // 获取产品数据（已对齐 /api/v1/products 返回的数组）
         const productsData = await apiService.getProducts();
-        setProducts(productsData.products);
+        setProducts(productsData);
       } catch (err) {
         setError('Failed to fetch data: ' + (err as Error).message);
         console.error('API Error:', err);
@@ -61,7 +55,7 @@ const ApiTestComponent: React.FC = () => {
           <ul className="list-disc pl-5">
             {products.map((product) => (
               <li key={product.id}>
-                {product.name} - Quantity: {product.quantity}
+                {product.name}
               </li>
             ))}
           </ul>

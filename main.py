@@ -38,6 +38,14 @@ def get_products():
     ]
     return {"products": products}
 
+@app.get("/Cummins_logo.svg")
+async def favicon():
+    # 如果public目录下有favicon.ico文件，则提供它
+    if os.path.exists("public/Cummins_logo.svg"):
+        return FileResponse("public/Cummins_logo.svg")
+    # 否则返回一个默认的图标或404
+    return FileResponse("404")
+
 # 为所有未匹配到的路径提供前端应用（支持前端路由）
 # 注意：这个端点应该放在所有API路由之后
 if os.path.exists("dist"):

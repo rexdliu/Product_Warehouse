@@ -9,11 +9,16 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8003,
     proxy: {
-      '/api': {
-        target: 'http://127.0.0.1:8001',
+      '/api/v1': {
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
         secure: false,
-      }
+      },
+      '/health': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+      },
     }
   },
   plugins: [

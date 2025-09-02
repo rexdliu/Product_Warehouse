@@ -25,8 +25,13 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10
     
-    # CORS配置
-    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:5173"]
+    # CORS配置（本地开发默认包含 5173 与 8003）
+    BACKEND_CORS_ORIGINS: List[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8003",
+        "http://127.0.0.1:8003",
+    ]
     
     # AI服务配置
     OPENAI_API_KEY: Optional[str] = None
