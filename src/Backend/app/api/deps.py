@@ -5,7 +5,7 @@ from jose import JWTError, jwt
 from app.core.config import settings
 from app.core.database import get_db
 from app.crud.user import user as user_crud
-from app.schemas.user import TokenData
+from app.schemas.user import TokenData, UserInDB
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -45,7 +45,7 @@ async def get_current_active_user(
 
 async def get_current_active_superuser(
     current_user = Depends(get_current_active_user)
-) -> User:
+) -> UserInDB:
     """获取当前超级用户"""
     if not user_crud.is_superuser(current_user):
         raise HTTPException(
