@@ -2,6 +2,64 @@
 
 记录项目的所有重要变更。
 
+## 2025-09-08
+
+### 新增 (Added)
+- 支持阿里云RDS MySQL数据库连接
+- 添加PyMySQL依赖以支持MySQL连接
+- 创建数据库连接测试脚本
+
+### 修改 (Changed)
+- 更新数据库配置以支持阿里云RDS MySQL
+- 修改数据库连接逻辑，支持MySQL连接池配置
+- 优化数据库连接URL构建方式
+
+### 配置 (Configuration)
+- 配置阿里云RDS MySQL连接参数：
+  - 主机: rm-zf85fdbqq9sc8zqnh8o.mysql.kualalumpur.rds.aliyuncs.com
+  - 端口: 3306
+  - 用户名: REX
+  - 数据库: product_warehouse
+
+## 2025-09-02
+
+### Improved frontend-backend integration and DX
+
+- Backend: Added `/api/v1/health` for versioned health checks (`src/Backend/app/main.py`).
+- Backend: Initialized database tables on startup for local dev using SQLite (`on_startup` in `src/Backend/app/main.py`).
+- Backend: Broadened default CORS origins to include `localhost:8003` and `127.0.0.1:8003` (`src/Backend/app/core/config.py`).
+- Frontend: Switched API calls to relative paths and aligned routes with backend (`/health`, `/api/v1/products`) in `src/services/api.ts`.
+- Frontend: Updated `ApiTestComponent` to consume product array directly and removed non-existent `quantity` field (`src/components/ApiTestComponent.tsx`).
+- Dev server: Updated Vite proxy to route `/api/v1` and `/health` to backend at `127.0.0.1:8000` (`vite.config.ts`).
+- Secrets: Set `SECRET_KEY=Rex1234` and added `BACKEND_CORS_ORIGINS` to `.env`.
+
+Notes:
+- RDS MySQL is not required for these changes; local SQLite auto-creates tables during development. Replace `DATABASE_URL` when RDS is ready.
+- Frontend no longer expects `quantity` on product; an inventory summary endpoint can be added later when DB is connected.
+
+## 2024-06-15
+
+### 新增
+- 项目初始化
+- 添加基础目录结构
+- 添加基础组件和页面
+- 添加Tailwind CSS和Shadcn UI配置
+- 添加状态管理和主题配置
+
+### 配置
+- 配置Vite开发环境
+- 配置TypeScript和ESLint
+- 配置路径别名
+- 配置开发服务器
+
+## 2025-08-22
+
+### 修复 (Fixes)
+- 修复 TypeScript 无法找到 React 类型声明的问题，通过安装 `@types/react` 包解决
+- 修复 AI 聊天机器人设置在页面刷新后丢失的问题，使用 Zustand 的 persist 中间件实现状态持久化
+
+### 新增 (Added)
+- 创建变更日志文件 CHANGELOG.md
 ## 2025-08-26
 
 ### 新增 (Added)
@@ -53,42 +111,3 @@
 - 前后端服务可在指定地址下运行，实现无缝集成
 - 使用Playwright验证前端页面在http://localhost:8003正常运行
 - 确认后端API服务在http://127.0.0.1:8000正常运行
-
-## 2024-06-15
-
-### 新增
-- 项目初始化
-- 添加基础目录结构
-- 添加基础组件和页面
-- 添加Tailwind CSS和Shadcn UI配置
-- 添加状态管理和主题配置
-
-### 配置
-- 配置Vite开发环境
-- 配置TypeScript和ESLint
-- 配置路径别名
-- 配置开发服务器
-
-## 2025-08-22
-
-### 修复 (Fixes)
-- 修复 TypeScript 无法找到 React 类型声明的问题，通过安装 `@types/react` 包解决
-- 修复 AI 聊天机器人设置在页面刷新后丢失的问题，使用 Zustand 的 persist 中间件实现状态持久化
-
-### 新增 (Added)
-- 创建变更日志文件 CHANGELOG.md
-## 2025-09-02
-
-### Improved frontend-backend integration and DX
-
-- Backend: Added `/api/v1/health` for versioned health checks (`src/Backend/app/main.py`).
-- Backend: Initialized database tables on startup for local dev using SQLite (`on_startup` in `src/Backend/app/main.py`).
-- Backend: Broadened default CORS origins to include `localhost:8003` and `127.0.0.1:8003` (`src/Backend/app/core/config.py`).
-- Frontend: Switched API calls to relative paths and aligned routes with backend (`/health`, `/api/v1/products`) in `src/services/api.ts`.
-- Frontend: Updated `ApiTestComponent` to consume product array directly and removed non-existent `quantity` field (`src/components/ApiTestComponent.tsx`).
-- Dev server: Updated Vite proxy to route `/api/v1` and `/health` to backend at `127.0.0.1:8000` (`vite.config.ts`).
-- Secrets: Set `SECRET_KEY=Rex1234` and added `BACKEND_CORS_ORIGINS` to `.env`.
-
-Notes:
-- RDS MySQL is not required for these changes; local SQLite auto-creates tables during development. Replace `DATABASE_URL` when RDS is ready.
-- Frontend no longer expects `quantity` on product; an inventory summary endpoint can be added later when DB is connected.

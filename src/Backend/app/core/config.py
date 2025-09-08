@@ -20,6 +20,13 @@ class Settings(BaseSettings):
     # 数据库配置
     DATABASE_URL: str = "sqlite:///./warehouse.db"
     
+    # MySQL数据库配置（阿里云RDS）
+    MYSQL_HOST: str = "rm-zf85fdbqq9sc8zqnh8o.mysql.kualalumpur.rds.aliyuncs.com"
+    MYSQL_PORT: int = 3306
+    MYSQL_USER: str = "REX"
+    MYSQL_PASSWORD: str = "Liuyerong729"
+    MYSQL_DATABASE: str = "product_warehouse"
+    
     # JWT配置
     SECRET_KEY: str = "your-secret-key-here"
     ALGORITHM: str = "HS256"
@@ -37,9 +44,15 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = None
     RAG_ENABLED: bool = False
     
+    @property
+    def SQLALCHEMY_DATABASE_URL(self) -> str:
+        """构建MySQL数据库URL"""
+        return f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
+    
     class Config:
         case_sensitive = True
         env_file = ".env"
+        extra = "ignore"  # 忽略.env文件中的额外变量
 
 
 # 创建全局配置实例

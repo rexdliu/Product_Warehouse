@@ -11,12 +11,14 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from app.core.config import settings
+from .config import settings
 
 # 创建数据库引擎
 engine = create_engine(
-    settings.DATABASE_URL,
-    connect_args={"check_same_thread": False}  # 仅用于SQLite
+    settings.SQLALCHEMY_DATABASE_URL,
+    pool_pre_ping=True,
+    pool_recycle=300,
+    echo=True  # 打印SQL语句用于调试
 )
 
 # 创建会话工厂
