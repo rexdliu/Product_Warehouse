@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Brain, Lightbulb, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { apiService, RAGQueryResponse } from '@/services/api';
 
 // 组件：AI 洞察卡片
 const AIInsightCard = ({ title, message }: { title: string, message: string }) => (
@@ -20,34 +21,28 @@ const AIInsightCard = ({ title, message }: { title: string, message: string }) =
     </CardContent>
   </Card>
 );
-type ReportRow = Record<string, string | number>;
 // 主页面组件
 const Reports: React.FC = () => {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [reportData, setReportData] = useState<ReportRow[] | null>(null);
-  const [reportHeaders, setReportHeaders] = useState<string[]>([]);
+  const [ragResult, setRagResult] = useState<RAGQueryResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // 模拟 Text-to-SQL 后端调用
-  const handleGenerateReport = () => {
+  const handleGenerateReport = async () => {
     if (!query.trim()) return;
     setIsLoading(true);
-    setReportData(null);
+    setError(null);
+    setRagResult(null);
 
-    console.log("正在向AI发送查询:", query);
-
-    // 模拟网络请求和 AI 处理延迟
-    setTimeout(() => {
-      // 在真实应用中，这里会是一个 API 调用
-      // 后端接收自然语言 -> 转换为 SQL -> 查询数据库 -> 返回 JSON
-      const mockData = [
-        { "产品名称": "iPhone 14 Pro", "总销售额": "$65,999.30", "已售数量": 70, "当前库存": 5 },
-        { "产品名称": "Samsung Galaxy S23", "总销售额": "$39,999.50", "已售数量": 50, "当前库存": 25 },
-      ];
-      setReportData(mockData);
-      setReportHeaders(Object.keys(mockData[0]));
+    try {
+      const response = await apiService.queryRag(query.trim());
+      setRagResult(response);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '生成报告失败');
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -91,26 +86,50 @@ const Reports: React.FC = () => {
 
           {/* 报告结果展示区域 */}
           {isLoading && <p className="text-center text-muted-foreground p-4">AI 正在为您分析数据，请稍候...</p>}
-          {reportData && (
-            <div className="mt-4 border rounded-lg overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {reportHeaders.map(key => (
-                      <TableHead key={key}>{key}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {reportData.map((row, index) => (
-                    <TableRow key={index}>
-                      {reportHeaders.map(header => (
-                        <TableCell key={header}>{row[header]}</TableCell>
+          {error && (
+            <p className="text-center text-destructive bg-destructive/10 border border-destructive/40 rounded-md p-3">
+              {error}
+            </p>
+          )}
+          {ragResult && (
+            <div className="space-y-4 mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>分析结论</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <pre className="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                    {ragResult.answer}
+                  </pre>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>参考知识片段</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>标题</TableHead>
+                        <TableHead>分类</TableHead>
+                        <TableHead>摘要</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {ragResult.sources.map((source) => (
+                        <TableRow key={source.id}>
+                          <TableCell className="font-medium">{source.title}</TableCell>
+                          <TableCell>{source.category}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {source.content}
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             </div>
           )}
         </CardContent>

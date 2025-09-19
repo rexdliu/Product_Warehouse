@@ -11,20 +11,25 @@
 6. 登录和令牌相关模型
 """
 
-from pydantic import BaseModel, EmailStr
-from typing import Optional
+from pydantic import BaseModel
+from typing import Optional, Dict, Any
 from datetime import datetime
 
 # 基础用户模型
 class UserBase(BaseModel):
     """用户基础模型，包含所有用户共享的字段"""
     username: str
-    email: EmailStr
+    email: str
+    phone: str
 
 # 创建用户模型
 class UserCreate(UserBase):
     """创建用户模型，包含创建用户时需要的字段"""
     password: str
+    notifications: Optional[Dict[str, Any]] = None
+    ai_settings: Optional[Dict[str, Any]] = None
+    avatar_url: Optional[str] = None
+    theme: Optional[str] = None
 
 # 更新用户模型
 class UserUpdate(UserBase):
@@ -32,6 +37,10 @@ class UserUpdate(UserBase):
     password: Optional[str] = None
     is_active: Optional[bool] = None
     is_superuser: Optional[bool] = None
+    notifications: Optional[Dict[str, Any]] = None
+    ai_settings: Optional[Dict[str, Any]] = None
+    avatar_url: Optional[str] = None
+    theme: Optional[str] = None
 
 # 数据库用户模型
 class UserInDB(UserBase):
@@ -41,6 +50,10 @@ class UserInDB(UserBase):
     is_superuser: bool
     created_at: datetime
     updated_at: Optional[datetime]
+    notifications: Optional[Dict[str, Any]] = None
+    ai_settings: Optional[Dict[str, Any]] = None
+    avatar_url: Optional[str] = None
+    theme: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -49,8 +62,8 @@ class UserInDB(UserBase):
 class UserSettings(BaseModel):
     """用户设置模型，包含用户个性化设置"""
     theme: str = "system"
-    notifications: Optional[dict] = None
-    ai_settings: Optional[dict] = None
+    notifications: Optional[Dict[str, Any]] = None
+    ai_settings: Optional[Dict[str, Any]] = None
     avatar_url: Optional[str] = None
 
 # 用户设置更新模型

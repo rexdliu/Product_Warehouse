@@ -11,9 +11,8 @@ from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from sqlalchemy.ext.declarative import DeclarativeMeta
 
-ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
+ModelType = TypeVar("ModelType")
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
@@ -33,7 +32,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         Args:
             model: SQLAlchemy 模型类
         """
-        self.model = model
+        self.model: Type[ModelType] = model
 
     def get(self, db: Session, id: Any) -> Optional[ModelType]:
         """
@@ -46,7 +45,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         Returns:
             Optional[ModelType]: 对象实例或 None
         """
-        return db.query(self.model).filter(self.model.id == id).first()
+        return db.get(self.model, id)
 
     def get_multi(
         self, db: Session, *, skip: int = 0, limit: int = 100
@@ -124,7 +123,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         Returns:
             ModelType: 删除的对象实例
         """
-        obj = db.query(self.model).get(id)
+        obj = db.get(self.model, id)
+        if obj is None:
+            raise ValueError(f"{self.model.__name__} with id {id} not found")
         db.delete(obj)
         db.commit()
         return obj

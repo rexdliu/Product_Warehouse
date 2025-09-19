@@ -111,3 +111,23 @@ Notes:
 - 前后端服务可在指定地址下运行，实现无缝集成
 - 使用Playwright验证前端页面在http://localhost:8003正常运行
 - 确认后端API服务在http://127.0.0.1:8000正常运行
+## 2025-09-19
+
+### 新增 (Added)
+- 新增销售经销商与订单模型及 `/api/v1/sales/*` 路由，返回真实数据库数据。
+- 构建轻量 RAG 知识库服务与 `/api/v1/ai/rag/query` 接口，前端 `Analytics`、`Reports` 页面可直接检索洞察。
+- 提供 `database_seed.sql`，用于在 MySQL 中初始化分类、产品、库存、经销商与订单样例数据。
+- 编写 `tests/test_api_endpoints.py`，覆盖登录、产品、库存、销售、RAG 及分类接口。
+
+### 修改 (Changed)
+- 统一后端用户模型与 schema，补充手机号、通知和 AI 设置 JSON 字段，修复注册/登录字段不一致问题。
+- 更新 `products`、`inventory` CRUD 调用及新增产品分类列表接口，前端通过 `apiService` 直接获取实时数据。
+- 重构前端 `useInventoryStore`、`useSalesStore`，移除全部模拟数据，改为调用后端 API；`Dashboard`、`Inventory` 页面支持加载状态与错误提示。
+- `Reports` 与 `Analytics` 页面接入 RAG 结果展示，替换原有延迟模拟逻辑。
+- 调整 SQLAlchemy 在 Python 3.13 上的兼容性检查，避免第三方库因 TypingOnly 变更导致测试运行失败。
+- 侧边栏、设置页、整站默认展示文案全面汉化，统一中文体验。
+- CRUD 基础类使用 `Session.get` 读取主键并补充未找到时的显式错误，解决静态类型告警并与 SQLAlchemy 2.x 风格保持一致。
+
+### 修复 (Fixed)
+- 修复产品分类接口被动态路由覆盖导致的 422 错误，并补充单元测试验证。
+- AI 服务在缺少 OpenAI Key 时返回可读的本地策略建议，避免界面出现“AI未配置”提示。

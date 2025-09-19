@@ -73,6 +73,10 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             phone=obj_in.phone,
             hashed_password=get_password_hash(obj_in.password),
             is_active=True,
+            notifications=obj_in.notifications or {},
+            ai_settings=obj_in.ai_settings or {},
+            avatar_url=obj_in.avatar_url,
+            theme=obj_in.theme or "system",
         )
         db.add(db_obj)
         db.commit()

@@ -2,7 +2,7 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.crud import inventory as inventory_crud
+from app.crud.inventory import inventory as inventory_repo, warehouse as warehouse_repo
 from app.schemas.inventory import (
     WarehouseCreate, WarehouseUpdate, WarehouseInDB,
     InventoryCreate, InventoryUpdate, InventoryInDB
@@ -18,7 +18,7 @@ def read_warehouses(
     limit: int = 100
 ) -> Any:
     """获取仓库列表"""
-    warehouses = inventory_crud.get_warehouses(db, skip=skip, limit=limit)
+    warehouses = warehouse_repo.get_multi(db, skip=skip, limit=limit)
     return warehouses
 
 @router.post("/warehouses", response_model=WarehouseInDB)
@@ -28,7 +28,7 @@ def create_warehouse(
     warehouse_in: WarehouseCreate
 ) -> Any:
     """创建仓库"""
-    warehouse = inventory_crud.create_warehouse(db, warehouse_in=warehouse_in)
+    warehouse = warehouse_repo.create(db, obj_in=warehouse_in)
     return warehouse
 
 # 库存相关API
@@ -39,7 +39,7 @@ def read_inventory_items(
     limit: int = 100
 ) -> Any:
     """获取库存项目列表"""
-    items = inventory_crud.get_inventory_items(db, skip=skip, limit=limit)
+    items = inventory_repo.get_multi(db, skip=skip, limit=limit)
     return items
 
 @router.get("/items/{id}", response_model=InventoryInDB)
@@ -49,7 +49,7 @@ def read_inventory_item(
     id: int
 ) -> Any:
     """获取特定库存项目"""
-    item = inventory_crud.get_inventory_item(db, id=id)
+    item = inventory_repo.get(db, id=id)
     if not item:
         raise HTTPException(
             status_code=404,
@@ -65,11 +65,11 @@ def update_inventory_item(
     item_in: InventoryUpdate
 ) -> Any:
     """更新库存项目"""
-    item = inventory_crud.get_inventory_item(db, id=id)
+    item = inventory_repo.get(db, id=id)
     if not item:
         raise HTTPException(
             status_code=404,
             detail="Inventory item not found"
         )
-    item = inventory_crud.update_inventory_item(db, db_obj=item, obj_in=item_in)
+    item = inventory_repo.update(db, db_obj=item, obj_in=item_in)
     return item

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Package, 
   AlertTriangle, 
@@ -19,7 +19,7 @@ import warehouseHero from '@/assets/warehouse-hero.jpg';
 
 const Dashboard: React.FC = () => {
   const [timePeriod, setTimePeriod] = useState<'weekly' | 'daily' | 'monthly'>('weekly');
-  const { products } = useInventoryStore();
+  const { products, loadInventory, loading: inventoryLoading } = useInventoryStore();
   const { addNotification } = useUIStore();
 
   // Calculate metrics
@@ -28,6 +28,16 @@ const Dashboard: React.FC = () => {
   const outOfStockCount = products.filter(p => p.status === 'out-of-stock').length;
   const pendingOrders = 12; // Mock data
   const warehouseCapacity = 85; // Mock percentage
+  const metricsLoading = inventoryLoading && products.length === 0;
+
+  const totalProductsValue = metricsLoading ? '...' : totalProducts.toString();
+  const lowStockValue = metricsLoading ? '...' : lowStockCount.toString();
+  const pendingOrdersValue = pendingOrders.toString();
+  const capacityValue = metricsLoading ? '...' : `${warehouseCapacity}%`;
+
+  useEffect(() => {
+    loadInventory();
+  }, [loadInventory]);
 
   const recentActivities = [
     {
@@ -101,28 +111,28 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricsCard
           title="产品总数"
-          value={totalProducts.toString()}
+          value={totalProductsValue}
           change={{ value: '12%', type: 'increase' }}
           icon={Package}
           variant="default"
         />
         <MetricsCard
           title="低库存警报"
-          value={lowStockCount.toString()}
+          value={lowStockValue}
           change={{ value: '3', type: 'decrease' }}
           icon={AlertTriangle}
           variant="warning"
         />
         <MetricsCard
           title="待处理订单"
-          value={pendingOrders.toString()}
+          value={pendingOrdersValue}
           change={{ value: '8%', type: 'increase' }}
           icon={ShoppingCart}
           variant="default"
         />
         <MetricsCard
           title="仓库容量使用率"
-          value={`${warehouseCapacity}%`}
+          value={capacityValue}
           change={{ value: '5%', type: 'increase' }}
           icon={Warehouse}
           variant={warehouseCapacity > 90 ? 'error' : warehouseCapacity > 75 ? 'warning' : 'success'}

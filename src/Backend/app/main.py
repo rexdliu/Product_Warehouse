@@ -12,13 +12,14 @@ WarehouseAI 后端主应用入口文件
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from app.api.v1 import api_router
+from .api.v1 import api_router
 from app.core.config import settings
 from app.core.database import Base, engine
 # 导入模型以确保元数据注册
 from app.models import user as user_models  # noqa: F401
 from app.models import product as product_models  # noqa: F401
 from app.models import inventory as inventory_models  # noqa: F401
+from app.models import sales as sales_models  # noqa: F401
 import os
 
 app = FastAPI(

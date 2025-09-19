@@ -16,13 +16,13 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Inventory', href: '/inventory', icon: Package },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Warehouse Map', href: '/warehouse', icon: MapPin },
-  { name: 'Reports', href: '/reports', icon: FileText },
-  { name: 'AI Assistant', href: '/ai', icon: Bot },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: '仪表盘', href: '/', icon: LayoutDashboard },
+  { name: '库存管理', href: '/inventory', icon: Package },
+  { name: '智能分析', href: '/analytics', icon: BarChart3 },
+  { name: '仓库地图', href: '/warehouse', icon: MapPin },
+  { name: '智能报告', href: '/reports', icon: FileText },
+  { name: 'AI 助手', href: '/ai', icon: Bot },
+  { name: '系统设置', href: '/settings', icon: Settings },
 ];
 
 export const AppSidebar: React.FC = () => {
@@ -43,7 +43,7 @@ export const AppSidebar: React.FC = () => {
                 <Package className="h-5 w-5 text-primary-foreground" />
               </div>
               <span className="text-lg font-semibold text-foreground">
-                WarehouseAI
+                智能仓储中心
               </span>
             </div>
           ) : (
@@ -94,7 +94,7 @@ export const AppSidebar: React.FC = () => {
             {sidebarOpen ? (
               <>
                 <ChevronLeft className="h-4 w-4 mr-2" />
-                Collapse
+                收起菜单
               </>
             ) : (
               <ChevronRight className="h-4 w-4" />

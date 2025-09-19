@@ -7,11 +7,16 @@
 2. 仓库的创建、获取、更新、删除
 """
 
-from typing import List
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from app.crud.base import CRUDBase
 from app.models.inventory import Inventory, Warehouse
-from app.schemas.inventory import InventoryCreate, InventoryUpdate, WarehouseCreate, WarehouseUpdate
+from app.schemas.inventory import (
+    InventoryCreate,
+    InventoryUpdate,
+    WarehouseCreate,
+    WarehouseUpdate,
+)
 
 class CRUDInventory(CRUDBase[Inventory, InventoryCreate, InventoryUpdate]):
     """库存 CRUD 操作类"""
@@ -42,3 +47,28 @@ inventory = CRUDInventory(Inventory)
 
 # 创建仓库 CRUD 实例
 warehouse = CRUDWarehouse(Warehouse)
+
+
+def get_warehouses(db: Session, *, skip: int = 0, limit: int = 100) -> List[Warehouse]:
+    return warehouse.get_multi(db, skip=skip, limit=limit)
+
+
+def create_warehouse(db: Session, *, warehouse_in: WarehouseCreate) -> Warehouse:
+    return warehouse.create(db, obj_in=warehouse_in)
+
+
+def get_inventory_items(db: Session, *, skip: int = 0, limit: int = 100) -> List[Inventory]:
+    return inventory.get_multi(db, skip=skip, limit=limit)
+
+
+def get_inventory_item(db: Session, *, id: int) -> Optional[Inventory]:
+    return inventory.get(db, id=id)
+
+
+def update_inventory_item(
+    db: Session,
+    *,
+    db_obj: Inventory,
+    obj_in: InventoryUpdate,
+) -> Inventory:
+    return inventory.update(db, db_obj=db_obj, obj_in=obj_in)

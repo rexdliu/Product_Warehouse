@@ -225,7 +225,7 @@ useEffect(() => {
               设置
             </h1>
             <p className="text-muted-foreground mt-1">
-              管理你的仓库偏好与系统配置
+              管理仓库策略、界面偏好与智能服务
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -296,15 +296,15 @@ useEffect(() => {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">姓名</Label>
-                    <Input id="name" defaultValue="John Doe" />
+                    <Input id="name" defaultValue="张仓管" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">邮箱</Label>
-                    <Input id="email" type="email" defaultValue="john.doe@warehouse.com" />
+                    <Input id="email" type="email" defaultValue="zhangcg@warehouse.com" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">电话</Label>
-                    <Input id="phone" defaultValue="+1 (555) 123-4567" />
+                    <Input id="phone" defaultValue="138-0000-0000" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="role">角色</Label>
@@ -336,11 +336,11 @@ useEffect(() => {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="warehouse-name">仓库名称</Label>
-                    <Input id="warehouse-name" defaultValue="Main Distribution Center" />
+                    <Input id="warehouse-name" defaultValue="主配送中心" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="warehouse-id">仓库 ID</Label>
-                    <Input id="warehouse-id" defaultValue="WH-001-NYC" disabled />
+                    <Input id="warehouse-id" defaultValue="WH-001-SH" disabled />
                   </div>
                 </div>
 
@@ -768,8 +768,8 @@ useEffect(() => {
                         <div className="flex items-center gap-3">
                           <Monitor className="w-5 h-5 text-muted-foreground" />
                           <div>
-                            <p className="font-medium">Windows PC - Chrome</p>
-                            <p className="text-sm text-muted-foreground">New York, US • 当前会话</p>
+                            <p className="font-medium">Windows 台式机 - Chrome</p>
+                            <p className="text-sm text-muted-foreground">美国纽约 • 当前会话</p>
                           </div>
                         </div>
                         <Badge variant="secondary">活动中</Badge>
@@ -779,10 +779,10 @@ useEffect(() => {
                           <Smartphone className="w-5 h-5 text-muted-foreground" />
                           <div>
                             <p className="font-medium">iPhone 14 Pro</p>
-                            <p className="text-sm text-muted-foreground">Brooklyn, US • 2 小时前</p>
+                            <p className="text-sm text-muted-foreground">美国布鲁克林 • 2 小时前</p>
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm">注销</Button>
+                        <Button variant="ghost" size="sm">远程登出</Button>
                       </div>
                     </div>
                   </div>
@@ -823,12 +823,12 @@ useEffect(() => {
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2">
                   {[
-                    { name: 'Shopify', icon: '🛍️', status: 'connected', description: '同步订单与库存' },
-                    { name: 'QuickBooks', icon: '📊', status: 'connected', description: '财务数据同步' },
-                    { name: 'Slack', icon: '💬', status: 'disconnected', description: '团队通知' },
-                    { name: 'Google Sheets', icon: '📄', status: 'disconnected', description: '导出报表' },
-                    { name: 'Zapier', icon: '⚡', status: 'disconnected', description: '工作流自动化' },
-                    { name: 'Microsoft Teams', icon: '👥', status: 'disconnected', description: '团队协作' },
+                    { name: 'Shopify 店铺', icon: '🛍️', status: 'connected', description: '同步在线订单与库存' },
+                    { name: 'QuickBooks 财务', icon: '📊', status: 'connected', description: '推送财务数据到会计系统' },
+                    { name: 'Slack 团队', icon: '💬', status: 'disconnected', description: '向频道发送仓库播报' },
+                    { name: 'Google 表格', icon: '📄', status: 'disconnected', description: '导出报表到共享表格' },
+                    { name: 'Zapier 自动化', icon: '⚡', status: 'disconnected', description: '自定义跨系统工作流' },
+                    { name: 'Microsoft Teams 协作', icon: '👥', status: 'disconnected', description: '推送通知给值班团队' },
                   ].map((integration) => (
                     <div key={integration.name} className="flex items-center justify-between p-4 rounded-lg border">
                       <div className="flex items-center gap-3">

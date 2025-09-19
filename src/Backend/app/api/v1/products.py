@@ -2,8 +2,13 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.crud import product as product_crud
-from app.schemas.product import ProductCreate, ProductUpdate, ProductInDB
+from app.crud.product import product as product_repo, category as category_repo
+from app.schemas.product import (
+    ProductCreate,
+    ProductUpdate,
+    ProductInDB,
+    ProductCategoryInDB,
+)
 
 router = APIRouter()
 
@@ -14,7 +19,7 @@ def read_products(
     limit: int = 100
 ) -> Any:
     """获取产品列表"""
-    products = product_crud.get_multi(db, skip=skip, limit=limit)
+    products = product_repo.get_multi(db, skip=skip, limit=limit)
     return products
 
 @router.post("/", response_model=ProductInDB)
@@ -24,8 +29,17 @@ def create_product(
     product_in: ProductCreate
 ) -> Any:
     """创建产品"""
-    product = product_crud.create(db, obj_in=product_in)
+    product = product_repo.create(db, obj_in=product_in)
     return product
+
+@router.get("/categories", response_model=List[ProductCategoryInDB])
+def read_categories(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+) -> Any:
+    """获取产品分类列表"""
+    return category_repo.get_multi(db, skip=skip, limit=limit)
 
 @router.get("/{id}", response_model=ProductInDB)
 def read_product(
@@ -34,7 +48,7 @@ def read_product(
     id: int
 ) -> Any:
     """获取特定产品"""
-    product = product_crud.get(db, id=id)
+    product = product_repo.get(db, id=id)
     if not product:
         raise HTTPException(
             status_code=404,
@@ -50,13 +64,13 @@ def update_product(
     product_in: ProductUpdate
 ) -> Any:
     """更新产品"""
-    product = product_crud.get(db, id=id)
+    product = product_repo.get(db, id=id)
     if not product:
         raise HTTPException(
             status_code=404,
             detail="Product not found"
         )
-    product = product_crud.update(db, db_obj=product, obj_in=product_in)
+    product = product_repo.update(db, db_obj=product, obj_in=product_in)
     return product
 
 @router.delete("/{id}", response_model=ProductInDB)
@@ -66,11 +80,12 @@ def delete_product(
     id: int
 ) -> Any:
     """删除产品"""
-    product = product_crud.get(db, id=id)
+    product = product_repo.get(db, id=id)
     if not product:
         raise HTTPException(
             status_code=404,
             detail="Product not found"
         )
-    product = product_crud.remove(db, id=id)
+    product = product_repo.remove(db, id=id)
+    return product
     return product
