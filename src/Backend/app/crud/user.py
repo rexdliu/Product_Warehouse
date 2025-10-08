@@ -8,7 +8,7 @@
 3. 用户状态检查（活跃状态、超级用户）
 """
 
-from typing import Optional
+from typing import Any, Dict, Optional, Union, cast
 from sqlalchemy.orm import Session
 from app.core.security import get_password_hash, verify_password
 from app.crud.base import CRUDBase
@@ -73,8 +73,8 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             phone=obj_in.phone,
             hashed_password=get_password_hash(obj_in.password),
             is_active=True,
-            notifications=obj_in.notifications or {},
-            ai_settings=obj_in.ai_settings or {},
+            notifications=dict(obj_in.notifications or {}),
+            ai_settings=dict(obj_in.ai_settings or {}),
             avatar_url=obj_in.avatar_url,
             theme=obj_in.theme or "system",
         )
@@ -83,7 +83,13 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         db.refresh(db_obj)
         return db_obj
 
-    def update(self, db: Session, *, db_obj: User, obj_in: UserUpdate) -> User:
+    def update(
+        self,
+        db: Session,
+        *,
+        db_obj: User,
+        obj_in: Union[UserUpdate, Dict[str, Any]]
+    ) -> User:
         """
         更新用户信息
         
@@ -95,7 +101,10 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         Returns:
             User: 更新后的用户对象
         """
-        update_data = obj_in.model_dump(exclude_unset=True)
+        if isinstance(obj_in, dict):
+            update_data = obj_in.copy()
+        else:
+            update_data = obj_in.model_dump(exclude_unset=True)
         if "password" in update_data:
             password = update_data["password"]
             hashed_password = get_password_hash(password)
@@ -118,7 +127,8 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         user = self.get_by_username(db, username=username)
         if not user:
             return None
-        if not verify_password(password, user.hashed_password):
+        stored_hash = cast(str, user.hashed_password)
+        if not verify_password(password, stored_hash):
             return None
         return user
 
@@ -132,7 +142,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         Returns:
             bool: 如果用户活跃返回 True，否则返回 False
         """
-        return user.is_active
+        return bool(getattr(user, "is_active", False))
 
     def is_superuser(self, user: User) -> bool:
         """
@@ -144,7 +154,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         Returns:
             bool: 如果用户是超级用户返回 True，否则返回 False
         """
-        return user.is_superuser
+        return bool(getattr(user, "is_superuser", False))
 
 # 创建用户 CRUD 实例
 user = CRUDUser(User)

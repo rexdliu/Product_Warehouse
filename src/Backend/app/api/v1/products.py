@@ -88,4 +88,3 @@ def delete_product(
         )
     product = product_repo.remove(db, id=id)
     return product
-    return product

@@ -127,6 +127,9 @@ Notes:
 - 调整 SQLAlchemy 在 Python 3.13 上的兼容性检查，避免第三方库因 TypingOnly 变更导致测试运行失败。
 - 侧边栏、设置页、整站默认展示文案全面汉化，统一中文体验。
 - CRUD 基础类使用 `Session.get` 读取主键并补充未找到时的显式错误，解决静态类型告警并与 SQLAlchemy 2.x 风格保持一致。
+- 更新库存与产品更新 Schema：`WarehouseUpdate` / `ProductCategoryUpdate` / `ProductUpdate` 改为独立的 `BaseModel`，所有字段可选，从而修复 Pylance 在继承中修改字段必填性的类型告警。
+- `AIService` 对 OpenAI 客户端的调用增加精确类型注解与返回值空串兜底，消除 `str | None` 返回类型告警，并保证消息列表符合 SDK 类型要求。
+- 销售 API 统一将 ORM 对象映射为 Pydantic schema 返回，避免 `List[Model]` 与 `List[Schema]` 的类型不兼容问题。
 
 ### 修复 (Fixed)
 - 修复产品分类接口被动态路由覆盖导致的 422 错误，并补充单元测试验证。

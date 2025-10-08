@@ -8,11 +8,19 @@
 3. 使用 Passlib 进行安全的密码处理
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import jwt
 from passlib.context import CryptContext
 from app.core.config import settings
+import bcrypt  # type: ignore
+from types import SimpleNamespace
+
+# Temporary compatibility shim:
+# passlib 1.x expects bcrypt.__about__.__version__, which was removed in bcrypt 4.3.
+# Restore the attribute so passlib's backend loader doesn't raise AttributeError.
+if not hasattr(bcrypt, "__about__"):  # pragma: no cover - safeguard for newer bcrypt
+    bcrypt.__about__ = SimpleNamespace(__version__=getattr(bcrypt, "__version__", "0"))
 
 # 密码加密上下文，使用 bcrypt 算法
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -54,10 +62,11 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
         str: JWT 访问令牌
     """
     to_encode = data.copy()
+    now_utc = datetime.now(timezone.utc)
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = now_utc + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = now_utc + timedelta(minutes=15)
     
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)

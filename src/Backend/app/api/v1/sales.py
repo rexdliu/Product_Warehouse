@@ -1,6 +1,6 @@
 """销售相关 API"""
 
-from typing import List, Optional
+from typing import Iterable, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -13,8 +13,17 @@ from app.schemas.sales import (
     SalesOrderInDB,
     SalesOrderUpdate,
 )
+from app.models.sales import Distributor, SalesOrder
 
 router = APIRouter()
+
+
+def _map_distributors(distributors: Iterable[Distributor]) -> List[DistributorInDB]:
+    return [DistributorInDB.model_validate(item) for item in distributors]
+
+
+def _map_sales_orders(orders: Iterable[SalesOrder]) -> List[SalesOrderInDB]:
+    return [SalesOrderInDB.model_validate(item) for item in orders]
 
 
 @router.get("/distributors", response_model=List[DistributorInDB])
@@ -23,7 +32,8 @@ def list_distributors(
     skip: int = 0,
     limit: int = 100,
 ) -> List[DistributorInDB]:
-    return sales_crud.distributor.get_multi(db, skip=skip, limit=limit)
+    distributors = sales_crud.distributor.get_multi(db, skip=skip, limit=limit)
+    return _map_distributors(distributors)
 
 
 @router.post("/distributors", response_model=DistributorInDB, status_code=201)
@@ -31,7 +41,8 @@ def create_distributor(
     distributor_in: DistributorCreate,
     db: Session = Depends(get_db),
 ) -> DistributorInDB:
-    return sales_crud.distributor.create(db, obj_in=distributor_in)
+    distributor = sales_crud.distributor.create(db, obj_in=distributor_in)
+    return DistributorInDB.model_validate(distributor)
 
 
 @router.put("/distributors/{distributor_id}", response_model=DistributorInDB)
@@ -43,7 +54,8 @@ def update_distributor(
     db_obj = sales_crud.distributor.get(db, distributor_id)
     if not db_obj:
         raise HTTPException(status_code=404, detail="Distributor not found")
-    return sales_crud.distributor.update(db, db_obj=db_obj, obj_in=distributor_in)
+    updated = sales_crud.distributor.update(db, db_obj=db_obj, obj_in=distributor_in)
+    return DistributorInDB.model_validate(updated)
 
 
 @router.get("/orders", response_model=List[SalesOrderInDB])
@@ -54,10 +66,12 @@ def list_sales_orders(
     distributor_id: Optional[int] = None,
 ) -> List[SalesOrderInDB]:
     if distributor_id is not None:
-        return sales_crud.sales_order.get_by_distributor(
+        orders = sales_crud.sales_order.get_by_distributor(
             db, distributor_id=distributor_id, skip=skip, limit=limit
         )
-    return sales_crud.sales_order.get_multi(db, skip=skip, limit=limit)
+    else:
+        orders = sales_crud.sales_order.get_multi(db, skip=skip, limit=limit)
+    return _map_sales_orders(orders)
 
 
 @router.post("/orders", response_model=SalesOrderInDB, status_code=201)
@@ -68,7 +82,8 @@ def create_sales_order(
     existing = sales_crud.sales_order.get_by_code(db, order_code=order_in.order_code)
     if existing:
         raise HTTPException(status_code=400, detail="Order code already exists")
-    return sales_crud.sales_order.create(db, obj_in=order_in)
+    order = sales_crud.sales_order.create(db, obj_in=order_in)
+    return SalesOrderInDB.model_validate(order)
 
 
 @router.put("/orders/{order_id}", response_model=SalesOrderInDB)
@@ -80,4 +95,5 @@ def update_sales_order(
     db_obj = sales_crud.sales_order.get(db, order_id)
     if not db_obj:
         raise HTTPException(status_code=404, detail="Order not found")
-    return sales_crud.sales_order.update(db, db_obj=db_obj, obj_in=order_in)
+    order = sales_crud.sales_order.update(db, db_obj=db_obj, obj_in=order_in)
+    return SalesOrderInDB.model_validate(order)

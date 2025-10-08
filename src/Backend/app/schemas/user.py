@@ -32,8 +32,11 @@ class UserCreate(UserBase):
     theme: Optional[str] = None
 
 # 更新用户模型
-class UserUpdate(UserBase):
-    """更新用户模型，包含更新用户时可能需要的字段"""
+class UserUpdate(BaseModel):
+    """更新用户模型，所有字段均为可选以支持部分更新"""
+    username: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
     password: Optional[str] = None
     is_active: Optional[bool] = None
     is_superuser: Optional[bool] = None

@@ -26,9 +26,11 @@ class WarehouseCreate(WarehouseBase):
     pass
 
 # 更新仓库模型
-class WarehouseUpdate(WarehouseBase):
+class WarehouseUpdate(BaseModel):
     """更新仓库模型"""
     name: Optional[str] = None
+    location: Optional[str] = None
+    capacity: Optional[float] = None
     is_active: Optional[bool] = None
 
 # 仓库数据库模型

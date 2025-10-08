@@ -8,15 +8,24 @@
 3. 获取和更新用户设置
 """
 
-from typing import Any, List
+from typing import Any, Dict, List, Optional, cast
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.crud import user as user_crud
-from app.schemas.user import UserCreate, UserInDB, UserSettings, UserSettingsUpdate, UserPasswordUpdate
+from app.crud.user import CRUDUser, user as _user_crud
+from app.schemas.user import (
+    UserInDB,
+    UserSettings,
+    UserSettingsUpdate,
+    UserPasswordUpdate,
+    UserUpdate,
+)
 from app.core.security import verify_password, get_password_hash
 # 依赖项导入
 from app.api.deps import get_current_active_user
+from app.models.user import User
+
+user_crud: CRUDUser = _user_crud
 
 # 创建路由实例
 router = APIRouter()
@@ -44,7 +53,7 @@ def read_users(
 @router.get("/me", response_model=UserInDB)
 def read_user_me(
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user)
 ) -> Any:
     """
     获取当前用户信息
@@ -63,15 +72,16 @@ def update_password(
     *,
     db: Session = Depends(get_db),
     password_data: UserPasswordUpdate,
-    current_user: UserInDB = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     更新用户密码
     """
-    if not verify_password(password_data.current_password, current_user.hashed_password):
+    stored_hash = cast(str, current_user.hashed_password)
+    if not verify_password(password_data.current_password, stored_hash):
         raise HTTPException(status_code=400, detail="Incorrect password")
     hashed_password = get_password_hash(password_data.new_password)
-    current_user.hashed_password = hashed_password
+    setattr(current_user, "hashed_password", hashed_password)
     db.add(current_user)
     db.commit()
     return {"msg": "Password updated successfully"}
@@ -79,7 +89,7 @@ def update_password(
 @router.get("/settings", response_model=UserSettings)
 def read_user_settings(
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user)
 ) -> Any:
     """
     获取当前用户设置
@@ -92,11 +102,16 @@ def read_user_settings(
         UserSettings: 当前用户设置
     """
     # 从数据库中获取用户设置
+    theme_value = cast(Optional[str], current_user.theme) or "system"
+    notifications_value = cast(Optional[Dict[str, Any]], current_user.notifications)
+    ai_settings_value = cast(Optional[Dict[str, Any]], current_user.ai_settings)
+    avatar_value = cast(Optional[str], current_user.avatar_url)
+
     settings = UserSettings(
-        theme=current_user.theme or "system",
-        notifications=current_user.notifications,
-        ai_settings=current_user.ai_settings,
-        avatar_url=current_user.avatar_url
+        theme=theme_value,
+        notifications=notifications_value,
+        ai_settings=ai_settings_value,
+        avatar_url=avatar_value
     )
     return settings
 
@@ -105,7 +120,7 @@ def update_user_settings(
     *,
     db: Session = Depends(get_db),
     user_settings_in: UserSettingsUpdate,
-    current_user = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user)
 ) -> Any:
     """
     更新当前用户设置
@@ -120,12 +135,18 @@ def update_user_settings(
     """
     # 更新用户设置到数据库
     update_data = user_settings_in.model_dump(exclude_unset=True)
-    user = user_crud.update(db, db_obj=current_user, obj_in=update_data)
-    
+    user_update = UserUpdate(**update_data)
+    user = user_crud.update(db, db_obj=current_user, obj_in=user_update)
+
+    theme_value = cast(Optional[str], user.theme) or "system"
+    notifications_value = cast(Optional[Dict[str, Any]], user.notifications)
+    ai_settings_value = cast(Optional[Dict[str, Any]], user.ai_settings)
+    avatar_value = cast(Optional[str], user.avatar_url)
+
     settings = UserSettings(
-        theme=user.theme or "system",
-        notifications=user.notifications,
-        ai_settings=user.ai_settings,
-        avatar_url=user.avatar_url
+        theme=theme_value,
+        notifications=notifications_value,
+        ai_settings=ai_settings_value,
+        avatar_url=avatar_value
     )
     return settings

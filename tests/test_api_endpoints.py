@@ -44,6 +44,10 @@ class APITestCase(unittest.TestCase):
         cls._seed_database()
 
     @classmethod
+    def tearDownClass(cls) -> None:
+        database_module.engine.dispose()
+
+    @classmethod
     def _seed_database(cls) -> None:
         session = SessionLocal()
         try:

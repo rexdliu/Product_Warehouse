@@ -23,9 +23,10 @@ class ProductCategoryCreate(ProductCategoryBase):
     pass
 
 # 更新产品分类模型
-class ProductCategoryUpdate(ProductCategoryBase):
+class ProductCategoryUpdate(BaseModel):
     """更新产品分类模型"""
     name: Optional[str] = None
+    description: Optional[str] = None
 
 # 产品分类数据库模型
 class ProductCategoryInDB(ProductCategoryBase):
@@ -54,11 +55,15 @@ class ProductCreate(ProductBase):
     pass
 
 # 更新产品模型
-class ProductUpdate(ProductBase):
+class ProductUpdate(BaseModel):
     """更新产品模型"""
     name: Optional[str] = None
     sku: Optional[str] = None
+    description: Optional[str] = None
     price: Optional[float] = None
+    cost: Optional[float] = None
+    category_id: Optional[int] = None
+    image_url: Optional[str] = None
     is_active: Optional[bool] = None
 
 # 产品数据库模型

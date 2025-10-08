@@ -1,11 +1,16 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, Optional, Sequence, TYPE_CHECKING
 import openai
 from app.core.config import settings
+
+if TYPE_CHECKING:
+    from openai import OpenAI
+    from openai.types.chat import ChatCompletionMessageParam
+
 
 class AIService:
     def __init__(self):
         if settings.OPENAI_API_KEY:
-            self.client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+            self.client: Optional["OpenAI"] = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
         else:
             self.client = None
     
@@ -36,11 +41,12 @@ class AIService:
                 ],
                 max_tokens=300
             )
-            return response.choices[0].message.content
+            content = response.choices[0].message.content
+            return content or ""
         except Exception as e:
             return f"生成洞察时出错: {str(e)}"
     
-    def chat_with_user(self, messages: List[Dict[str, str]]) -> str:
+    def chat_with_user(self, messages: Sequence["ChatCompletionMessageParam"]) -> str:
         """与用户聊天"""
         if not self.client:
             return "AI服务未配置，请配置 OPENAI_API_KEY。"
@@ -48,10 +54,11 @@ class AIService:
         try:
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                messages=messages,
+                messages=list(messages),
                 max_tokens=500
             )
-            return response.choices[0].message.content
+            content = response.choices[0].message.content
+            return content or ""
         except Exception as e:
             return f"聊天时出错: {str(e)}"
 

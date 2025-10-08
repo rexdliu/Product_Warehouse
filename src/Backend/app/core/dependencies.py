@@ -14,9 +14,10 @@ from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from app.core.config import settings
 from app.core.database import get_db
-from app.crud.user import user as user_crud
-from app.schemas.user import TokenData
+from app.crud.user import CRUDUser, user as _user_crud
 from app.models.user import User
+
+user_crud: CRUDUser = _user_crud
 
 # OAuth2 密码流，用于从请求中提取访问令牌
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
@@ -45,15 +46,19 @@ async def get_current_user(
     )
     
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        token_data = TokenData(username=username)
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+        )
     except JWTError:
         raise credentials_exception
+
+    username = payload.get("sub")
+    if not isinstance(username, str):
+        raise credentials_exception
     
-    user = user_crud.get_by_username(db, username=token_data.username)
+    user = user_crud.get_by_username(db, username=username)
     if user is None:
         raise credentials_exception
     
