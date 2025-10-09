@@ -115,6 +115,36 @@ uvicorn app.main:app --reload
 celery -A app.tasks.celery_app worker --loglevel=info
 ```
 
+#### 创建核心表结构 (MySQL / AWS RDS)
+
+1. 在目标 MySQL 实例中创建数据库（如果尚未创建）：
+   ```sql
+   CREATE DATABASE product_warehouse CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
+2. 切换到新数据库并执行 `sql/create_tables.sql` 以创建所有业务表：
+   ```sql
+   USE product_warehouse;
+   SOURCE sql/create_tables.sql;
+   ```
+   该脚本遵循《数据库规范.md》和《数据规范.md》，并与 `database_seed.sql` 的示例数据完全兼容。
+3. （可选）执行示例数据脚本：
+   ```sql
+   SOURCE database_seed.sql;
+   ```
+
+#### 测试阿里云 RDS MySQL 连接
+
+1. 在项目根目录创建或更新 `.env`，写入正确的连接字符串：
+   ```env
+   DATABASE_URL=mysql+pymysql://<username>:<password>@<host>:3306/product_warehouse
+   ```
+   > 默认会使用 `src/Backend/app/core/config.py` 中的备选 RDS 参数；若 `.env` 中显式提供 `DATABASE_URL` 将优先生效。
+2. 安装 Python 依赖后，运行连接测试脚本：
+   ```bash
+   python test_rds_connection.py
+   ```
+3. 若看到数据库版本、当前数据库名称与表清单，则表示 RDS 配置成功；如失败，请检查网络白名单、账号密码及安全组配置。
+
 ## 📋 功能实现状态
 
 ### 前端已完成功能

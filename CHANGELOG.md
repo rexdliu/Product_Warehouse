@@ -2,6 +2,16 @@
 
 记录项目的所有重要变更。
 
+## 2025-09-20
+
+### 新增 (Added)
+- 编写 `sql/create_tables.sql`，提供符合数据库规范与示例数据的建表脚本，适配 MySQL 8.0 / AWS RDS。
+- 在 README 中新增 MySQL 建表步骤与 RDS 连接测试指南。
+
+### 修改 (Changed)
+- 说明如何使用 `database_seed.sql` 导入初始数据。
+- 补充使用 `test_rds_connection.py` 验证数据库连通性的操作流程。
+
 ## 2025-09-08
 
 ### 新增 (Added)
