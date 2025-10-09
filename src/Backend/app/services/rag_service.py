@@ -14,7 +14,7 @@ DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "rag" / "warehouse
 @dataclass
 class KnowledgeChunk:
     id: str
-    title: ©
+    title: str
     category: str
     content: str
 

@@ -18,14 +18,7 @@ class Settings(BaseSettings):
     """应用配置类"""
     
     # 数据库配置
-    DATABASE_URL: str = "sqlite:///./warehouse.db"
-    
-    # MySQL数据库配置（阿里云RDS）
-    MYSQL_HOST: str = "rm-zf85fdbqq9sc8zqnh8o.mysql.kualalumpur.rds.aliyuncs.com"
-    MYSQL_PORT: int = 3306
-    MYSQL_USER: str = "REX"
-    MYSQL_PASSWORD: str = "Liuyerong729"
-    MYSQL_DATABASE: str = "product_warehouse"
+    DATABASE_URL: str = "mysql+pymysql://rex:Liuyerong729!@rm-gs54780452unf94747o.mysql.singapore.rds.aliyuncs.com:3306/product_warehouse"
     
     # JWT配置
     SECRET_KEY: str = "your-secret-key-here"
@@ -46,13 +39,8 @@ class Settings(BaseSettings):
     
     @property
     def SQLALCHEMY_DATABASE_URL(self) -> str:
-        """优先使用显式 DATABASE_URL，未配置时回退到 MySQL 参数"""
-        if self.DATABASE_URL:
-            return self.DATABASE_URL
-        return (
-            f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}"
-            f"@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
-        )
+        """返回数据库URL"""
+        return self.DATABASE_URL
     
     class Config:
         case_sensitive = True

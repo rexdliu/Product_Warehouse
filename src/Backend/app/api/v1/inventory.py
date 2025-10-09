@@ -9,7 +9,6 @@ from app.schemas.inventory import (
 )
 
 router = APIRouter()
-
 # 仓库相关API
 @router.get("/warehouses", response_model=List[WarehouseInDB])
 def read_warehouses(
