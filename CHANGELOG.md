@@ -2,6 +2,15 @@
 
 记录项目的所有重要变更。
 
+## 2025-10-09
+
+### 新增 (Added)
+- 添加后端服务启动脚本 (start_backend.sh)
+- 添加完整开发环境启动脚本 (start_dev.sh)
+- 在package.json中添加npm脚本简化开发流程
+  - dev:backend: 启动后端服务
+  - dev:full: 同时启动前端和后端服务
+
 ## 2025-09-08
 
 ### 新增 (Added)

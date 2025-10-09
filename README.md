@@ -63,40 +63,25 @@ WarehouseAI 是一个现代化的仓库管理系统，集成了人工智能助�
 
 ## 🚀 快速开始
 
-### 前端开发
+### 开发环境搭建
 
 1. 克隆项目:
 ```bash
 git clone <repository-url>
+cd warehouse-ai
 ```
 
 2. 安装依赖:
 ```bash
+# 安装前端依赖
 npm install
-```
 
-3. 启动开发服务器:
-```bash
-npm run dev
-```
+# 创建并激活Python虚拟环境
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate    # Windows
 
-4. 构建生产版本:
-```bash
-npm run build
-```
-
-### 后端开发
-
-1. 创建虚拟环境:
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# 或
-venv\Scripts\activate  # Windows
-```
-
-2. 安装 Python 依赖:
-```bash
+# 安装后端依赖
 pip install -r requirements.txt
 ```
 
@@ -105,13 +90,31 @@ pip install -r requirements.txt
 alembic upgrade head
 ```
 
-4. 启动后端服务:
+4. 启动开发环境:
+
+方式一：使用npm脚本启动（推荐）
 ```bash
-uvicorn app.main:app --reload
+# 只启动后端服务
+npm run dev:backend
+
+# 同时启动前端和后端服务
+npm run dev:full
+```
+
+方式二：手动启动服务
+```bash
+# 启动后端服务 (在新终端)
+source .venv/bin/activate
+PYTHONPATH=src/Backend uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload
+
+# 启动前端服务 (在新终端)
+npm run dev
 ```
 
 5. 启动 Celery 异步任务处理器 (新终端):
 ```bash
+source .venv/bin/activate
+cd src/Backend
 celery -A app.tasks.celery_app worker --loglevel=info
 ```
 
