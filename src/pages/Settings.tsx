@@ -6,6 +6,8 @@ import {
   Upload, Globe, Wifi, WifiOff, Check, ChevronRight,
   Building2, MapPin, BarChart3, Lock, Sparkles
 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { apiService } from '@/services/api';
 import {
   Card,
   CardContent,
@@ -178,28 +180,88 @@ useEffect(() => {
     };
     reader.readAsDataURL(file);
   };
-  const handleSave = () => {
-    // 此处可提交设置到后端
-    const data: SettingsData = {
-      theme,
-      notifications,
-      aiSettings,
-      lowStockThreshold,
-      autoReorder,
-      avatarUrl,
-      showAnimations,
-      compactSidebar,
-      showTooltips,
-    };
-    setSavedSettings(data);
-    const desiredTheme = theme === 'system'
-      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-      : theme;
-    setGlobalTheme(desiredTheme);
-    setToast({ visible: true, message: '设置已保存' });
-    setTimeout(() => setToast({ visible: false, message: '' }), 2000);
-  };
+  const [saving, setSaving] = useState(false);
 
+  // 从后端加载设置
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const settings = await apiService.getUserSettings();
+
+        // 应用后端的设置到前端状态
+        if (settings.theme) {
+          setTheme(settings.theme as 'system' | 'light' | 'dark');
+        }
+        if (settings.notifications) {
+          setNotifications({
+            email: settings.notifications.email ?? true,
+            push: settings.notifications.push ?? true,
+            sms: settings.notifications.sms ?? false,
+            lowStock: settings.notifications.lowStock ?? true,
+            orderUpdates: settings.notifications.orderUpdates ?? true,
+            systemAlerts: settings.notifications.systemAlerts ?? true,
+          });
+        }
+        if (settings.ai_settings) {
+          const newAISettings = { ...aiSettings, ...settings.ai_settings };
+          setAISettings(newAISettings);
+        }
+        if (settings.avatar_url) {
+          setAvatarUrl(settings.avatar_url);
+        }
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+        // 如果加载失败，使用本地默认值
+      }
+    };
+
+    loadSettings();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      // 准备要保存的设置数据
+      const data: SettingsData = {
+        theme,
+        notifications,
+        aiSettings,
+        lowStockThreshold,
+        autoReorder,
+        avatarUrl,
+        showAnimations,
+        compactSidebar,
+        showTooltips,
+      };
+
+      // 调用API保存到后端数据库
+      await apiService.updateUserSettings({
+        theme,
+        notifications,
+        ai_settings: aiSettings,
+        avatar_url: avatarUrl,
+      });
+
+      // 保存成功后更新本地状态
+      setSavedSettings(data);
+      const desiredTheme = theme === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : theme;
+      setGlobalTheme(desiredTheme);
+
+      setToast({ visible: true, message: '✅ 设置已成功保存到数据库' });
+      setTimeout(() => setToast({ visible: false, message: '' }), 2000);
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      setToast({
+        visible: true,
+        message: \`❌ 保存失败: \${error instanceof Error ? error.message : '未知错误'}\`
+      });
+      setTimeout(() => setToast({ visible: false, message: '' }), 3000);
+    } finally {
+      setSaving(false);
+    }
+  };
   const handleCancel = () => {
     if (savedSettings) {
       setTheme(savedSettings.theme);
@@ -865,8 +927,8 @@ useEffect(() => {
 
         {/* 底部操作区 */}
         <div className="flex justify-end gap-4 pt-6">
-           <Button variant="outline" onClick={handleCancel}>取消</Button>
-          <Button className="gap-2" onClick={handleSave}>
+           <Button variant="outline" onClick={handleCancel} disabled={saving}>取消</Button>
+          <Button className="gap-2" onClick={handleSave} disabled={saving}>
             <Check className="w-4 h-4" />
             保存更改
           </Button>
