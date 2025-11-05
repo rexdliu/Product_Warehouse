@@ -12,6 +12,7 @@ WarehouseAI 后端主应用入口文件
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from .api.v1 import api_router
 from app.core.config import settings
 from app.core.database import Base, engine
@@ -21,6 +22,7 @@ from app.models import product as product_models  # noqa: F401
 from app.models import inventory as inventory_models  # noqa: F401
 from app.models import sales as sales_models  # noqa: F401
 import os
+from pathlib import Path
 
 app = FastAPI(
     title="WarehouseAI API",
@@ -40,10 +42,66 @@ app.add_middleware(
 # 包含API路由
 app.include_router(api_router, prefix="/api/v1")
 
-@app.get("/")
-async def root():
-    """根路径，返回欢迎信息"""
-    return {"message": "Welcome to WarehouseAI API"}
+# 查找dist目录的位置（生产环境）
+# 目录结构：Product_Warehouse/
+#   ├── src/Backend/app/main.py (当前文件)
+#   └── dist/ (构建后的前端文件)
+current_file = Path(__file__)  # .../src/Backend/app/main.py
+project_root = current_file.parent.parent.parent.parent  # 上4级到项目根目录
+dist_path = project_root / "dist"
+
+# 如果dist目录存在，挂载静态文件
+if dist_path.exists() and dist_path.is_dir():
+    print(f"📁 找到前端构建文件: {dist_path}")
+
+    # 挂载静态资源文件（带缓存）
+    app.mount("/assets", StaticFiles(directory=str(dist_path / "assets")), name="assets")
+
+    # 根路径返回index.html
+    @app.get("/")
+    async def serve_frontend_root():
+        """生产环境：返回前端index.html"""
+        index_file = dist_path / "index.html"
+        if index_file.exists():
+            return FileResponse(str(index_file))
+        return {"message": "Frontend not built. Run 'npm run build' first."}
+
+    # Catch-all路由：支持前端路由（React Router）
+    # 这必须放在最后，匹配所有未被API路由捕获的路径
+    from fastapi import Request
+
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str, request: Request):
+        """
+        Catch-all路由：返回index.html以支持前端路由
+
+        注意：API路由(/api/v1/*)会优先匹配，不会进入这里
+        """
+        # 如果是请求静态文件，尝试返回
+        file_path = dist_path / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(str(file_path))
+
+        # 否则返回index.html（让前端路由处理）
+        index_file = dist_path / "index.html"
+        if index_file.exists():
+            return FileResponse(str(index_file))
+
+        return {"message": "Frontend not found"}
+
+    print("✅ 生产模式：前端静态文件已挂载")
+else:
+    print(f"⚠️  开发模式：未找到dist目录 ({dist_path})")
+    print("   提示：运行 'npm run build' 构建前端")
+
+    @app.get("/")
+    async def root():
+        """开发模式：返回欢迎信息"""
+        return {
+            "message": "Welcome to WarehouseAI API",
+            "mode": "development",
+            "note": "Run 'npm run build' to build frontend for production"
+        }
 
 @app.get("/api/v1/health")
 async def api_health_check():
