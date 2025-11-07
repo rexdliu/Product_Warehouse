@@ -181,7 +181,7 @@ from sqlalchemy import create_engine
 import os
 
 # 读取环境变量
-db_url = "mysql+pymysql://rex:Liuyerong729!@rm-gs54780452unf94747o.mysql.singapore.rds.aliyuncs.com:3306/product_warehouse"
+db_url = "mysql+pymysql://rex:Liuyerong729!@rm-zf80cj27ot21b1f2exo.mysql.kualalumpur.rds.aliyuncs.com/test_data"
 
 try:
     engine = create_engine(db_url)
