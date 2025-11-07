@@ -122,12 +122,10 @@ nano .env  # 或使用 vi .env
 
 ```bash
 # 数据库配置（使用你的RDS信息）
-DATABASE_URL=mysql+pymysql://rex:Liuyerong729!@rm-gs54780452unf94747o.mysql.singapore.rds.aliyuncs.com:3306/product_warehouse
+DATABASE_URL=mysql+pymysql://rex:Liuyerong729!@rm-zf80cj27ot21b1f2exo.mysql.kualalumpur.rds.aliyuncs.com/test_data
 
 # JWT安全密钥（生成新的随机密钥）
 SECRET_KEY=$(openssl rand -hex 32)  # 先运行这个命令生成，然后复制结果
-# 或直接使用一个强密码，例如：
-SECRET_KEY=your-super-secret-key-change-this-in-production
 
 # Token过期时间（分钟）
 ACCESS_TOKEN_EXPIRE_MINUTES=30
