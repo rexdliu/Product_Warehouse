@@ -13,7 +13,7 @@ fi
 # 启动后端服务
 echo "正在启动后端服务 (http://127.0.0.1:8001)..."
 source .venv/bin/activate
-PYTHONPATH=src/Backend uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload &
+PYTHONPATH=src/Backend uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload &
 BACKEND_PID=$!
 
 # 等待后端服务启动

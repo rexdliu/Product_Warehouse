@@ -2,6 +2,37 @@
 
 记录项目的所有重要变更。
 
+## 2025-11-10
+### 更新了数据库
+主要优化点：
+产品表 (products) - 添加 Cummins 特定字段：
+
+part_number: 零件号（如 "3803682"）
+engine_model: 适用发动机型号（如 "6BT5.9"）
+manufacturer: 制造商
+unit: 单位（件/箱/升）
+min_stock_level: 最低库存预警
+销售订单 (sales_orders) - 添加状态跟踪：
+
+status: pending/processing/completed/cancelled/shipped
+unit_price: 单价
+warehouse_id: 出货仓库
+delivery_date: 交货日期
+user_id: 创建人
+notes: 备注
+仓库 (warehouses) - 添加管理信息：
+
+current_usage: 当前使用量（用于计算容量）
+manager_name, phone: 管理员信息
+经销商 (distributors) - 添加业务字段：
+
+code: 经销商代码
+email, address: 联系信息
+credit_limit: 信用额度
+新增活动日志表 (activity_logs):
+
+统一记录所有系统活动
+用于 Dashboard 的"最近活动"
 ## 2025-10-09
 
 ### 新增 (Added)

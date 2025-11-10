@@ -20,7 +20,7 @@ from types import SimpleNamespace
 # passlib 1.x expects bcrypt.__about__.__version__, which was removed in bcrypt 4.3.
 # Restore the attribute so passlib's backend loader doesn't raise AttributeError.
 if not hasattr(bcrypt, "__about__"):  # pragma: no cover - safeguard for newer bcrypt
-    bcrypt.__about__ = SimpleNamespace(__version__=getattr(bcrypt, "__version__", "0"))
+    bcrypt.__about__ = SimpleNamespace(__version__=getattr(bcrypt, "__version__", "0"))  # type: ignore[attr-defined]
 
 # 密码加密上下文，使用 bcrypt 算法
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
