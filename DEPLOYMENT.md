@@ -1,103 +1,315 @@
-# 部署说明
+# Product Warehouse - 生产环境部署指南
 
-## 开发环境 vs 生产环境
+本文档详细说明如何将 Product Warehouse 项目部署到生产环境。
 
-在开发环境中，前端和后端通常运行在不同的端口上：
-- 前端 (Vite): http://localhost:8003
-- 后端 (FastAPI): http://127.0.0.1:8001
+## 📋 目录
 
-这种分离便于开发和调试，但在生产环境中，我们通常希望用户通过单一入口访问应用。
+1. [系统要求](#系统要求)
+2. [部署架构](#部署架构)
+3. [快速部署](#快速部署)
+4. [手动部署步骤](#手动部署步骤)
+5. [配置说明](#配置说明)
+6. [服务管理](#服务管理)
+7. [故障排查](#故障排查)
+8. [安全建议](#安全建议)
 
-## 生产环境部署方式
+---
 
-有两种常见的部署方式：
+## 🖥️ 系统要求
 
-### 1. 静态文件部署（推荐）
+### 硬件要求
+- **CPU**: 2核及以上
+- **内存**: 4GB 及以上
+- **磁盘**: 20GB 及以上
 
-在这种方式中，前端应用被构建为静态文件，并由后端服务器提供服务。
+### 软件要求
+- **操作系统**: Ubuntu 20.04+ / CentOS 8+ / Debian 11+
+- **Python**: 3.9+
+- **Node.js**: 18+
+- **Nginx**: 1.18+
+- **MySQL**: 8.0+ (推荐使用阿里云 RDS)
 
-#### 部署步骤：
+---
 
-1. 构建前端应用：
-   ```bash
-   npm run build
-   ```
-   这将在项目根目录下生成一个 `dist` 目录，包含所有静态文件。
+## 🏗️ 部署架构
 
-2. 运行后端服务：
-   ```bash
-   python main.py
-   ```
-
-3. 访问应用：
-   打开浏览器访问 http://your-domain.com 或 http://your-server-ip:8000
-
-#### 工作原理：
-
-后端服务（main.py）会检查是否存在 `dist` 目录。如果存在，它会：
-- 将根路径 `/` 挂载到 `dist` 目录，提供前端静态文件
-- 保留 `/api/*` 路由处理后端API请求
-- 为所有未匹配的路径提供 `dist/index.html`，支持前端路由
-
-这种方式的优点：
-- 单一入口，简化部署
-- 更好的性能（无需处理CORS）
-- 简化网络配置
-
-### 2. 反向代理部署
-
-在这种方式中，前端和后端分别部署，通过Nginx等反向代理服务器统一访问。
-
-#### 部署步骤：
-
-1. 分别部署前端和后端应用到不同服务器或端口
-2. 配置Nginx等反向代理服务器：
-   ```nginx
-   server {
-       listen 80;
-       server_name your-domain.com;
-
-       # 前端静态文件
-       location / {
-           root /path/to/frontend/dist;
-           try_files $uri $uri/ /index.html;
-       }
-
-       # 后端API代理
-       location /api/ {
-           proxy_pass http://localhost:8001;
-           proxy_set_header Host $host;
-           proxy_set_header X-Real-IP $remote_addr;
-       }
-   }
-   ```
-
-## 环境变量配置
-
-在生产环境中，应使用环境变量配置敏感信息：
-
-创建 `.env` 文件：
-```env
-# 数据库配置
-DATABASE_URL=postgresql://user:password@localhost/dbname
-
-# JWT密钥
-SECRET_KEY=your-secret-key
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-
-# 其他配置
-DEBUG=False
+```
+用户请求 (80/443)
+    ↓
+┌─────────────────────┐
+│   Nginx (80/443)    │
+│  反向代理 + 负载均衡  │
+└─────────────────────┘
+         ↓
+    ┌────┴────┐
+    ↓         ↓
+┌─────────┐  ┌──────────────┐
+│ 前端静态 │  │ 后端 API      │
+│ 文件/dev │  │ (uvicorn)    │
+│ (8003)  │  │ (127.0.0.1:  │
+│         │  │  8001)       │
+└─────────┘  └──────────────┘
+                    ↓
+            ┌──────────────┐
+            │ 阿里云 RDS    │
+            │ MySQL 8.0    │
+            └──────────────┘
 ```
 
-## 部署检查清单
+### 端口分配
 
-- [ ] 构建前端应用 (`npm run build`)
-- [ ] 验证后端API功能
-- [ ] 确认静态文件能正确提供
-- [ ] 配置环境变量
-- [ ] 设置适当的CORS策略（生产环境中不应使用通配符*）
-- [ ] 配置HTTPS（推荐）
-- [ ] 设置适当的日志记录
-- [ ] 配置数据库连接池
-- [ ] 设置定期备份策略
+| 服务 | 开发端口 | 生产端口 | 说明 |
+|------|---------|---------|------|
+| Nginx | - | 80/443 | 对外服务 |
+| 前端 | 8003 | 8003 (内部) 或静态文件 | 通过 Nginx 代理 |
+| 后端 API | 8001 | 8001 (内部) | 通过 Nginx 代理 |
+| MySQL | 3306 | 3306 (RDS) | 数据库服务 |
+
+---
+
+## 🚀 快速部署
+
+### 使用自动化脚本（推荐）
+
+```bash
+# 1. 克隆项目（如果还没有）
+git clone https://github.com/yourusername/Product_Warehouse.git
+cd Product_Warehouse
+
+# 2. 配置环境变量
+cp .env.production.example .env.production
+nano .env.production  # 修改数据库连接、密钥等配置
+
+# 3. 运行部署脚本
+./deploy.sh
+```
+
+---
+
+## 📝 手动部署步骤
+
+### 步骤 1: 准备环境
+
+```bash
+# 更新系统包
+sudo apt update && sudo apt upgrade -y
+
+# 安装必要的软件
+sudo apt install -y python3 python3-venv python3-pip nodejs npm nginx git
+
+# 验证安装
+python3 --version  # 应该是 3.9+
+node --version     # 应该是 18+
+nginx -v
+```
+
+### 步骤 2: 克隆项目
+
+```bash
+cd /home/user
+git clone https://github.com/yourusername/Product_Warehouse.git
+cd Product_Warehouse
+```
+
+### 步骤 3: 配置环境变量
+
+```bash
+# 复制环境变量模板
+cp .env.production.example .env.production
+
+# 编辑环境变量（重要！）
+nano .env.production
+```
+
+**必须修改的配置：**
+- `DATABASE_URL`: 阿里云 RDS MySQL 连接字符串
+- `SECRET_KEY`: 随机生成的安全密钥
+- `BACKEND_CORS_ORIGINS`: 允许的前端域名
+
+生成安全密钥：
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+### 步骤 4: 构建前端
+
+```bash
+# 安装依赖
+npm install
+
+# 构建生产版本
+npm run build
+
+# 构建产物位于 dist/ 目录
+```
+
+### 步骤 5: 安装后端依赖
+
+```bash
+# 创建 Python 虚拟环境
+python3 -m venv .venv
+
+# 激活虚拟环境
+source .venv/bin/activate
+
+# 安装依赖
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### 步骤 6: 配置 Nginx
+
+```bash
+# 复制 Nginx 配置
+sudo cp nginx/warehouse.conf /etc/nginx/sites-available/
+
+# 创建符号链接
+sudo ln -s /etc/nginx/sites-available/warehouse.conf /etc/nginx/sites-enabled/
+
+# 测试配置
+sudo nginx -t
+
+# 重新加载 Nginx
+sudo systemctl reload nginx
+```
+
+### 步骤 7: 配置 systemd 服务
+
+```bash
+# 复制服务文件
+sudo cp systemd/warehouse-backend.service /etc/systemd/system/
+
+# 重新加载 systemd
+sudo systemctl daemon-reload
+
+# 启用开机自启
+sudo systemctl enable warehouse-backend
+
+# 启动服务
+sudo systemctl start warehouse-backend
+
+# 检查状态
+sudo systemctl status warehouse-backend
+```
+
+---
+
+## ⚙️ 配置说明
+
+### 环境变量详解
+
+#### 后端环境变量 (.env.production)
+
+| 变量名 | 说明 | 必填 |
+|--------|------|------|
+| `DATABASE_URL` | 数据库连接字符串 | ✅ |
+| `SECRET_KEY` | JWT 签名密钥 | ✅ |
+| `BACKEND_CORS_ORIGINS` | 允许的跨域源 | ✅ |
+
+### 数据库连接字符串格式
+
+**阿里云 RDS MySQL:**
+```
+mysql+pymysql://username:password@rm-xxxxxxx.mysql.rds.aliyuncs.com:3306/database_name
+```
+
+---
+
+## 🔧 服务管理
+
+### 后端服务管理
+
+```bash
+# 启动服务
+sudo systemctl start warehouse-backend
+
+# 停止服务
+sudo systemctl stop warehouse-backend
+
+# 重启服务
+sudo systemctl restart warehouse-backend
+
+# 查看状态
+sudo systemctl status warehouse-backend
+
+# 查看日志
+sudo journalctl -u warehouse-backend -f
+```
+
+### Nginx 管理
+
+```bash
+# 测试配置
+sudo nginx -t
+
+# 重新加载配置
+sudo systemctl reload nginx
+
+# 查看访问日志
+sudo tail -f /var/log/nginx/warehouse_access.log
+
+# 查看错误日志
+sudo tail -f /var/log/nginx/warehouse_error.log
+```
+
+---
+
+## 🐛 故障排查
+
+### 常见问题
+
+#### 1. 502 Bad Gateway
+
+**解决：**
+```bash
+# 检查后端服务状态
+sudo systemctl status warehouse-backend
+
+# 查看后端日志
+sudo journalctl -u warehouse-backend -n 50
+```
+
+#### 2. 数据库连接失败
+
+**解决：**
+```bash
+# 检查环境变量
+cat .env.production | grep DATABASE_URL
+
+# 测试数据库连接
+mysql -h rm-xxxxxxx.mysql.rds.aliyuncs.com -u username -p
+```
+
+---
+
+## 🔒 安全建议
+
+### 1. 使用 HTTPS
+
+```bash
+# 安装 Certbot
+sudo apt install certbot python3-certbot-nginx
+
+# 获取证书
+sudo certbot --nginx -d www.rexp.top -d rexp.top
+```
+
+### 2. 修改默认密钥
+
+```bash
+# 生成安全的 SECRET_KEY
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+### 3. 防火墙配置
+
+```bash
+# 允许 HTTP/HTTPS
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
+```
+
+---
+
+**最后更新**: 2025-11-10
