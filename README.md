@@ -63,60 +63,181 @@ WarehouseAI 是一个现代化的仓库管理系统，集成了人工智能助�
 
 ## 🚀 快速开始
 
+### 前置要求
+
+- **Node.js**: 18+
+- **Python**: 3.9+
+- **阿里云 RDS MySQL**: 8.0+（推荐）
+- **Git**: 最新版本
+
+---
+
 ### 开发环境搭建
 
-1. 克隆项目:
+#### 1. 克隆项目
+
 ```bash
-git clone <repository-url>
-cd warehouse-ai
+git clone https://github.com/yourusername/Product_Warehouse.git
+cd Product_Warehouse
 ```
 
-2. 安装依赖:
+#### 2. 配置数据库（重要！）
+
+本项目使用**阿里云 RDS MySQL**，在同一个 RDS 实例上创建两个数据库：
+
+- `warehouse_test_data` - 开发/测试数据库
+- `warehouse_product` - 生产数据库
+
+**创建数据库：**
+
+```sql
+-- 登录你的阿里云 RDS MySQL
+mysql -h rm-xxxxx.mysql.rds.aliyuncs.com -u username -p
+
+-- 创建测试数据库
+CREATE DATABASE warehouse_test_data CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- 创建生产数据库
+CREATE DATABASE warehouse_product CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- 验证
+SHOW DATABASES;
+```
+
+#### 3. 配置开发环境变量
+
+```bash
+# 复制环境变量模板
+cp .env.example .env
+
+# 编辑 .env 文件
+nano .env
+```
+
+**填入你的配置：**
+
+```bash
+# 开发环境 - 使用测试数据库
+DATABASE_URL=mysql+pymysql://username:password@rm-xxxxx.mysql.rds.aliyuncs.com:3306/warehouse_test_data
+
+# 开发密钥（仅测试使用）
+SECRET_KEY=dev-secret-key-for-testing-only
+
+# 允许本地访问
+BACKEND_CORS_ORIGINS=["http://localhost:8003", "http://127.0.0.1:8003"]
+
+# 开启调试
+DEBUG=True
+LOG_LEVEL=DEBUG
+```
+
+#### 4. 安装依赖
+
 ```bash
 # 安装前端依赖
 npm install
 
-# 创建并激活Python虚拟环境
-python -m venv .venv
+# 创建并激活 Python 虚拟环境
+python3 -m venv .venv
 source .venv/bin/activate  # Linux/Mac
-# venv\Scripts\activate    # Windows
+# .venv\Scripts\activate    # Windows
 
 # 安装后端依赖
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-3. 数据库迁移:
+#### 5. 启动开发环境
+
+**方式一：使用脚本启动（推荐）**
+
 ```bash
-alembic upgrade head
+# 同时启动前端和后端
+./start_dev.sh
 ```
 
-4. 启动开发环境:
+**方式二：分别启动服务**
 
-方式一：使用npm脚本启动（推荐）
 ```bash
-# 只启动后端服务
-npm run dev:backend
-
-# 同时启动前端和后端服务
-npm run dev:full
-```
-
-方式二：手动启动服务
-```bash
-# 启动后端服务 (在新终端)
+# 启动后端 (终端1)
 source .venv/bin/activate
-PYTHONPATH=src/Backend uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload
+./start_backend.sh
 
-# 启动前端服务 (在新终端)
+# 启动前端 (终端2)
 npm run dev
 ```
 
-5. 启动 Celery 异步任务处理器 (新终端):
+#### 6. 访问应用
+
+- 前端: http://localhost:8003
+- 后端 API: http://localhost:8001
+- API 文档: http://localhost:8001/docs
+
+---
+
+### 环境切换
+
+本项目支持开发和生产两个环境：
+
+| 环境 | 配置文件 | 数据库 | 用途 |
+|------|----------|--------|------|
+| **开发** | `.env` | `warehouse_test_data` | 开发和测试 |
+| **生产** | `.env.production` | `warehouse_product` | 生产运营 |
+
+**切换到开发环境：**
+
 ```bash
-source .venv/bin/activate
-cd src/Backend
-celery -A app.tasks.celery_app worker --loglevel=info
+# 使用 .env 配置文件
+cp .env.example .env
+nano .env  # 编辑配置
+./start_dev.sh
 ```
+
+**切换到生产环境：**
+
+```bash
+# 使用 .env.production 配置文件
+cp .env.production.example .env.production
+nano .env.production  # 编辑配置（⚠️ 必须使用强密钥！）
+./deploy.sh
+```
+
+**环境配置对照：**
+
+```bash
+# 开发环境 (.env)
+DATABASE_URL=mysql+pymysql://user:pass@rds-host/warehouse_test_data
+DEBUG=True
+LOG_LEVEL=DEBUG
+
+# 生产环境 (.env.production)
+DATABASE_URL=mysql+pymysql://user:pass@rds-host/warehouse_product
+DEBUG=False
+LOG_LEVEL=INFO
+```
+
+---
+
+### 生产环境部署
+
+详细的部署说明请参见：
+
+- 📘 **[DEPLOYMENT.md](./DEPLOYMENT.md)** - 完整的部署指南
+- 📘 **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - 数据库设计文档
+- 📘 **[BUSINESS_WORKFLOW.md](./BUSINESS_WORKFLOW.md)** - 业务流程说明
+
+**快速部署命令：**
+
+```bash
+# 配置生产环境变量
+cp .env.production.example .env.production
+nano .env.production
+
+# 运行自动化部署脚本
+./deploy.sh
+```
+
+---
 
 ## 📋 功能实现状态
 

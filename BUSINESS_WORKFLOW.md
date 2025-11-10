@@ -44,41 +44,79 @@
 
 ### 问题 2: 是否需要两个数据库？
 
-**答案**：不需要，使用环境变量区分开发和生产环境
+**答案**：不需要两个物理数据库服务器，但在同一个阿里云 RDS 上创建两个数据库
 
-#### 数据库配置方案
+#### 数据库配置方案（推荐）⭐
 
 ```
-开发环境 (.env 或 .env.development)
-├── 数据库：本地 SQLite (warehouse_dev.db)
-├── 数据：测试数据（种子数据）
-└── 目的：开发和测试功能
+阿里云 RDS MySQL (同一个 RDS 实例)
+│
+├── 开发环境 (.env)
+│   ├── 数据库：warehouse_test_data
+│   ├── 数据：测试数据（种子数据）
+│   └── 目的：开发和测试功能
+│
+└── 生产环境 (.env.production)
+    ├── 数据库：warehouse_product
+    ├── 数据：真实业务数据
+    └── 目的：实际运营
+```
 
-生产环境 (.env.production)
-├── 数据库：阿里云 RDS MySQL
-├── 数据：真实业务数据
-└── 目的：实际运营
+**优势**：
+- ✅ 环境一致（都是 MySQL），无兼容性问题
+- ✅ 数据隔离（测试数据不会影响生产数据）
+- ✅ 可以随时重置测试数据库
+- ✅ 使用同一个 RDS 实例，管理方便
+
+#### 在 RDS 上创建两个数据库
+
+```sql
+-- 登录 RDS MySQL
+mysql -h rm-xxxxx.mysql.rds.aliyuncs.com -u username -p
+
+-- 创建测试数据库
+CREATE DATABASE warehouse_test_data
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+-- 创建生产数据库
+CREATE DATABASE warehouse_product
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+-- 查看数据库
+SHOW DATABASES;
+```
+
+#### 环境配置文件
+
+**开发环境 (.env)**:
+```bash
+DATABASE_URL=mysql+pymysql://user:pass@rm-xxxxx.mysql.rds.aliyuncs.com:3306/warehouse_test_data
+DEBUG=True
+LOG_LEVEL=DEBUG
+```
+
+**生产环境 (.env.production)**:
+```bash
+DATABASE_URL=mysql+pymysql://user:pass@rm-xxxxx.mysql.rds.aliyuncs.com:3306/warehouse_product
+DEBUG=False
+LOG_LEVEL=INFO
 ```
 
 #### 环境切换
 
-```python
-# config.py
-import os
-from pydantic_settings import BaseSettings
+```bash
+# 开发环境（使用 .env 文件）
+cp .env.example .env
+# 编辑 .env，设置 warehouse_test_data 数据库
+source .venv/bin/activate
+./start_backend.sh
 
-class Settings(BaseSettings):
-    # 根据环境变量自动选择数据库
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL",
-        "sqlite:///./warehouse_dev.db"  # 开发环境默认
-    )
-    
-    class Config:
-        env_file = ".env"
-
-# 生产环境
-# DATABASE_URL=mysql+pymysql://user:pass@rds.aliyuncs.com:3306/warehouse
+# 生产环境（使用 .env.production 文件）
+cp .env.production.example .env.production
+# 编辑 .env.production，设置 warehouse_product 数据库
+./deploy.sh
 ```
 
 ---

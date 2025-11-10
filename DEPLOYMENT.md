@@ -6,12 +6,14 @@
 
 1. [系统要求](#系统要求)
 2. [部署架构](#部署架构)
-3. [快速部署](#快速部署)
-4. [手动部署步骤](#手动部署步骤)
-5. [配置说明](#配置说明)
-6. [服务管理](#服务管理)
-7. [故障排查](#故障排查)
-8. [安全建议](#安全建议)
+3. [数据库配置](#数据库配置)
+4. [环境配置和切换](#环境配置和切换)
+5. [快速部署](#快速部署)
+6. [手动部署步骤](#手动部署步骤)
+7. [配置说明](#配置说明)
+8. [服务管理](#服务管理)
+9. [故障排查](#故障排查)
+10. [安全建议](#安全建议)
 
 ---
 
@@ -64,6 +66,189 @@
 | 前端 | 8003 | 8003 (内部) 或静态文件 | 通过 Nginx 代理 |
 | 后端 API | 8001 | 8001 (内部) | 通过 Nginx 代理 |
 | MySQL | 3306 | 3306 (RDS) | 数据库服务 |
+
+---
+
+## 🗄️ 数据库配置
+
+### 数据库架构（推荐方案）
+
+**使用同一个阿里云 RDS MySQL 实例，创建两个数据库：**
+
+```
+阿里云 RDS MySQL (rm-xxxxx.mysql.rds.aliyuncs.com)
+│
+├── warehouse_test_data  (开发/测试数据库)
+│   ├── 用途：开发和测试
+│   ├── 数据：测试数据（可随时重置）
+│   └── 配置文件：.env
+│
+└── warehouse_product    (生产数据库)
+    ├── 用途：生产环境
+    ├── 数据：真实业务数据
+    └── 配置文件：.env.production
+```
+
+**优势**：
+- ✅ 环境一致（都是 MySQL），无兼容性问题
+- ✅ 数据完全隔离，测试不会影响生产
+- ✅ 使用同一个 RDS 实例，管理方便
+- ✅ 可以随时重置测试数据库
+
+### 创建数据库
+
+登录阿里云 RDS 控制台，或使用 MySQL 客户端：
+
+```sql
+-- 登录 RDS
+mysql -h rm-xxxxx.mysql.rds.aliyuncs.com -u username -p
+
+-- 创建测试数据库
+CREATE DATABASE warehouse_test_data
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+-- 创建生产数据库
+CREATE DATABASE warehouse_product
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+-- 验证
+SHOW DATABASES;
+```
+
+---
+
+## 🔄 环境配置和切换
+
+### 开发环境配置
+
+**步骤 1: 复制配置文件**
+```bash
+cp .env.example .env
+```
+
+**步骤 2: 编辑 .env 文件**
+```bash
+nano .env
+```
+
+**配置内容**：
+```bash
+# 开发环境 - 使用测试数据库
+DATABASE_URL=mysql+pymysql://username:password@rm-xxxxx.mysql.rds.aliyuncs.com:3306/warehouse_test_data
+
+# 开发环境可以使用简单密钥
+SECRET_KEY=dev-secret-key-for-testing-only
+
+# 允许本地访问
+BACKEND_CORS_ORIGINS=["http://localhost:8003", "http://127.0.0.1:8003"]
+
+# 开启调试模式
+DEBUG=True
+LOG_LEVEL=DEBUG
+```
+
+**步骤 3: 启动开发环境**
+```bash
+# 启动后端
+source .venv/bin/activate
+./start_backend.sh
+
+# 启动前端（新终端）
+npm run dev
+```
+
+---
+
+### 生产环境配置
+
+**步骤 1: 复制配置文件**
+```bash
+cp .env.production.example .env.production
+```
+
+**步骤 2: 编辑 .env.production 文件**
+```bash
+nano .env.production
+```
+
+**配置内容**：
+```bash
+# 生产环境 - 使用生产数据库
+DATABASE_URL=mysql+pymysql://username:password@rm-xxxxx.mysql.rds.aliyuncs.com:3306/warehouse_product
+
+# ⚠️ 必须使用强密钥！
+# 生成命令: python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+SECRET_KEY=your-super-strong-production-secret-key
+
+# 只允许生产域名
+BACKEND_CORS_ORIGINS=["https://www.rexp.top", "https://rexp.top"]
+
+# ⚠️ 关闭调试模式
+DEBUG=False
+LOG_LEVEL=INFO
+```
+
+**步骤 3: 部署到生产环境**
+```bash
+# 使用自动化脚本
+./deploy.sh
+```
+
+---
+
+### 环境切换对照表
+
+| 项目 | 开发环境 | 生产环境 |
+|------|----------|----------|
+| **配置文件** | `.env` | `.env.production` |
+| **数据库** | `warehouse_test_data` | `warehouse_product` |
+| **SECRET_KEY** | 简单密钥（仅测试） | 强密钥（必须） |
+| **DEBUG** | `True` | `False` |
+| **LOG_LEVEL** | `DEBUG` | `INFO` |
+| **CORS** | 允许 localhost | 只允许生产域名 |
+| **数据** | 测试数据（可重置） | 真实数据（谨慎操作） |
+
+---
+
+### 如何切换环境
+
+#### 方法 1: 使用不同的配置文件
+
+```bash
+# 开发环境
+export ENV_FILE=.env
+source .venv/bin/activate
+uvicorn app.main:app --reload
+
+# 生产环境
+export ENV_FILE=.env.production
+source .venv/bin/activate
+uvicorn app.main:app --host 0.0.0.0 --port 8001
+```
+
+#### 方法 2: 使用脚本
+
+```bash
+# 开发环境
+./start_dev.sh
+
+# 生产环境
+./deploy.sh
+```
+
+#### 方法 3: 直接指定数据库 URL
+
+```bash
+# 临时使用测试数据库
+export DATABASE_URL="mysql+pymysql://user:pass@rm-xxxxx.mysql.rds.aliyuncs.com:3306/warehouse_test_data"
+python your_script.py
+
+# 临时使用生产数据库
+export DATABASE_URL="mysql+pymysql://user:pass@rm-xxxxx.mysql.rds.aliyuncs.com:3306/warehouse_product"
+python your_script.py
+```
 
 ---
 
