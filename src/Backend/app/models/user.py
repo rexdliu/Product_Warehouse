@@ -13,17 +13,20 @@ from app.core.database import Base
 class User(Base):
     """
     用户模型
-    
+
     用于存储用户的基本信息、认证信息和设置。
+    角色: staff=员工, manager=仓库管理员, admin=系统管理员
     """
-    
+
     __tablename__ = "users"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     phone = Column(String, unique=True, index=True, nullable=False)
+    full_name = Column(String)  # 全名
     hashed_password = Column(String, nullable=False)
+    role = Column(String, default="staff")  # staff, manager, admin
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
