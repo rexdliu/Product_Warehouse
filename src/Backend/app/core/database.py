@@ -15,7 +15,7 @@ from .config import settings
 
 # 创建数据库引擎
 engine = create_engine(
-    settings.SQLALCHEMY_DATABASE_URL,
+    settings.DATABASE_URL,
     pool_pre_ping=True,
     pool_recycle=300,
     echo=True  # 打印SQL语句用于调试

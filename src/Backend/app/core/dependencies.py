@@ -121,7 +121,7 @@ async def require_admin(
     Raises:
         HTTPException: 如果用户不是 admin 角色
     """
-    if current_user.role != "admin":
+    if current_user.role != "admin":  # type: ignore[comparison-overlap]
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="需要管理员权限"
@@ -143,7 +143,7 @@ async def require_manager_or_above(
     Raises:
         HTTPException: 如果用户不是 admin 或 manager 角色
     """
-    if current_user.role not in ["admin", "manager"]:
+    if current_user.role not in ["admin", "manager"]:  # type: ignore[comparison-overlap]
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="需要管理员或仓库管理员权限"
@@ -165,7 +165,7 @@ async def require_staff_or_above(
     Raises:
         HTTPException: 如果用户不是 admin、manager 或 staff 角色
     """
-    if current_user.role not in ["admin", "manager", "staff"]:
+    if current_user.role not in ["admin", "manager", "staff"]:  # type: ignore[comparison-overlap]
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="需要有效的用户角色"
