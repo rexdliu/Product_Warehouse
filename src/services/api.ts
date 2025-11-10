@@ -201,6 +201,15 @@ export interface LoginResponse {
   token_type: string;
 }
 
+export interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+  phone?: string;
+  full_name?: string;
+  role?: string;
+}
+
 export interface UserResponse {
   id: number;
   username: string;
@@ -385,6 +394,13 @@ class ApiService {
     // 保存 token
     this.setToken(response.access_token);
     return response;
+  }
+
+  async register(data: RegisterRequest): Promise<UserResponse> {
+    return this.request<UserResponse>('/api/v1/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   async getCurrentUser(): Promise<UserResponse> {

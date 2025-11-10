@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@/stores';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,6 +75,12 @@ const Login = () => {
         </Button>
         <p className="text-sm text-center text-muted-foreground">
           测试账号: admin / admin123
+        </p>
+        <p className="text-sm text-center text-muted-foreground">
+          没有账号？{' '}
+          <Link to="/register" className="text-primary hover:underline">
+            立即注册
+          </Link>
         </p>
       </form>
     </div>

@@ -25,6 +25,7 @@ import WarehouseMap from "./pages/WarehouseMap";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -34,8 +35,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* 登录页面 - 不需要布局和认证 */}
+          {/* 登录和注册页面 - 不需要布局和认证 */}
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
           {/* 受保护的路由 - 需要认证和布局 */}
           <Route
