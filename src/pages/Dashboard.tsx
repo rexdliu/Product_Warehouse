@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  Package, 
-  AlertTriangle, 
-  ShoppingCart, 
+import {
+  Package,
+  AlertTriangle,
+  ShoppingCart,
   Warehouse,
   TrendingUp,
   Clock,
@@ -13,78 +13,103 @@ import { DashboardCharts } from '@/components/dashboard/DashboardCharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useInventoryStore, useUIStore } from '@/stores';
+import { useUIStore } from '@/stores';
+import { apiService, type DashboardStats, type ActivityLog } from '@/services/api';
 import warehouseHero from '@/assets/warehouse-hero.jpg';
 
 
 const Dashboard: React.FC = () => {
   const [timePeriod, setTimePeriod] = useState<'weekly' | 'daily' | 'monthly'>('weekly');
-  const { products, loadInventory, loading: inventoryLoading } = useInventoryStore();
   const { addNotification } = useUIStore();
 
-  // Calculate metrics
-  const totalProducts = products.length;
-  const lowStockCount = products.filter(p => p.status === 'low-stock').length;
-  const outOfStockCount = products.filter(p => p.status === 'out-of-stock').length;
-  const pendingOrders = 12; // Mock data
-  const warehouseCapacity = 85; // Mock percentage
-  const metricsLoading = inventoryLoading && products.length === 0;
-
-  const totalProductsValue = metricsLoading ? '...' : totalProducts.toString();
-  const lowStockValue = metricsLoading ? '...' : lowStockCount.toString();
-  const pendingOrdersValue = pendingOrders.toString();
-  const capacityValue = metricsLoading ? '...' : `${warehouseCapacity}%`;
+  // Dashboard data state
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentActivities, setRecentActivities] = useState<ActivityLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadInventory();
-  }, [loadInventory]);
+    loadDashboardData();
+  }, []);
 
-  const recentActivities = [
-    {
-      id: '1',
-      action: '库存已更新',
-      item: 'iPhone 14 Pro',
-      time: '2分钟前',
-      type: 'update'
-    },
-    {
-      id: '2',
-      action: '订单已处理',
-      item: 'Order #WH-2024-045',
-      time: '15分钟前',
-      type: 'order'
-    },
-    {
-      id: '3',
-      action: '低库存警报',
-      item: 'Samsung Galaxy S23',
-      time: '1小时前',
-      type: 'alert'
-    },
-    {
-      id: '4',
-      action: '新增产品',
-      item: 'Office Desk Pro',
-      time: '2小时前',
-      type: 'add'
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // 并行加载所有数据
+      const [statsData, activitiesData] = await Promise.all([
+        apiService.getDashboardStats(),
+        apiService.getRecentActivities(10),
+      ]);
+
+      setStats(statsData);
+      setRecentActivities(activitiesData);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : '加载数据失败';
+      setError(errorMsg);
+      addNotification({
+        title: '加载失败',
+        message: errorMsg,
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  // 格式化时间
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (seconds < 60) return `${seconds}秒前`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}分钟前`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}小时前`;
+    return `${Math.floor(seconds / 86400)}天前`;
+  };
+
+  // 根据活动类型返回对应的 CSS 类
+  const getActivityTypeClass = (type: string) => {
+    switch (type) {
+      case 'alert':
+        return 'bg-warning';
+      case 'order':
+        return 'bg-success';
+      case 'inventory':
+        return 'bg-primary';
+      default:
+        return 'bg-muted';
+    }
+  };
+
+  const metricsLoading = loading;
+  const totalProductsValue = metricsLoading ? '...' : (stats?.total_products ?? 0).toString();
+  const lowStockValue = metricsLoading ? '...' : (stats?.low_stock_items ?? 0).toString();
+  const pendingOrdersValue = metricsLoading ? '...' : (stats?.pending_orders ?? 0).toString();
+
+  // 计算仓库容量使用率
+  const warehouseCapacity = stats
+    ? Math.min(Math.round((stats.total_inventory / (stats.total_products * 100)) * 100), 100)
+    : 0;
+  const capacityValue = metricsLoading ? '...' : `${warehouseCapacity}%`;
 
   const aiInsights = [
     {
-      title: '需求预测',
-      message: '预计下周 iPhone 14 Pro 需求将增加 25%',
-      confidence: 92
+      title: '库存预警',
+      message: `当前有 ${stats?.low_stock_items ?? 0} 个产品低于最低库存水平`,
+      confidence: 95
     },
     {
-      title: '库存优化',
-      message: '将高需求商品移至 A 区可提升 15% 效率',
-      confidence: 88
+      title: '订单统计',
+      message: `待处理订单: ${stats?.pending_orders ?? 0} 个`,
+      confidence: 100
     },
     {
-      title: '异常检测',
-      message: '检测到 FURN-OC-001 异常退货模式',
-      confidence: 85
+      title: '库存总值',
+      message: `当前库存总价值: ¥${stats?.total_inventory_value?.toFixed(2) ?? '0.00'}`,
+      confidence: 100
     }
   ];
 
@@ -169,28 +194,30 @@ const Dashboard: React.FC = () => {
               <Clock className="h-5 w-5" />
               <span>最近活动</span>
             </CardTitle>
-            <Button variant="outline" size="sm">
-              查看全部
+            <Button variant="outline" size="sm" onClick={loadDashboardData}>
+              刷新
             </Button>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className={`h-2 w-2 rounded-full ${
-                      activity.type === 'alert' ? 'bg-warning' :
-                      activity.type === 'order' ? 'bg-success' :
-                      activity.type === 'add' ? 'bg-primary' : 'bg-muted'
-                    }`} />
-                    <div>
-                      <p className="text-sm font-medium">{activity.action}</p>
-                      <p className="text-xs text-muted-foreground">{activity.item}</p>
+              {loading ? (
+                <p className="text-sm text-muted-foreground">加载中...</p>
+              ) : recentActivities.length === 0 ? (
+                <p className="text-sm text-muted-foreground">暂无活动记录</p>
+              ) : (
+                recentActivities.map((activity) => (
+                  <div key={activity.id} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className={`h-2 w-2 rounded-full ${getActivityTypeClass(activity.activity_type)}`} />
+                      <div>
+                        <p className="text-sm font-medium">{activity.action}</p>
+                        <p className="text-xs text-muted-foreground">{activity.item_name}</p>
+                      </div>
                     </div>
+                    <span className="text-xs text-muted-foreground">{formatTimeAgo(activity.created_at)}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{activity.time}</span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
