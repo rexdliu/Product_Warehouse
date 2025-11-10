@@ -267,8 +267,8 @@ class DashboardService:
         utilization_list = []
         for warehouse in warehouses:
             # 获取实际值并进行类型转换
-            capacity = float(warehouse.capacity) if warehouse.capacity else 0.0
-            current_usage = float(warehouse.current_usage) if warehouse.current_usage else 0.0
+            capacity = float(warehouse.capacity) if warehouse.capacity else 0.0  # type: ignore[truthy-bool]
+            current_usage = float(warehouse.current_usage) if warehouse.current_usage else 0.0  # type: ignore[truthy-bool]
 
             if capacity > 0:
                 utilization_rate = round((current_usage / capacity) * 100, 2)
@@ -279,7 +279,7 @@ class DashboardService:
                 WarehouseUtilization(
                     warehouse_id=int(warehouse.id),
                     warehouse_name=str(warehouse.name),
-                    warehouse_code=str(warehouse.code) if warehouse.code else f"WH{warehouse.id:03d}",
+                    warehouse_code=str(warehouse.code) if warehouse.code else f"WH{warehouse.id:03d}",  # type: ignore[truthy-bool]
                     capacity=capacity,
                     current_usage=current_usage,
                     utilization_rate=float(utilization_rate),
