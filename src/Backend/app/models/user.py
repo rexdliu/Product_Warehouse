@@ -6,7 +6,7 @@
 1. User - 用户模型，包含基本信息和认证相关字段
 """
 
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, JSON
+from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -15,7 +15,7 @@ class User(Base):
     用户模型
 
     用于存储用户的基本信息、认证信息和设置。
-    角色: staff=员工, manager=仓库管理员, admin=系统管理员
+    角色: staff=员工(只读), manager=仓库管理员(管理订单库存), admin=系统管理员(完全访问)
     """
 
     __tablename__ = "users"
@@ -23,7 +23,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
-    phone = Column(String, unique=True, index=True, nullable=False)
+    phone = Column(String)
     full_name = Column(String)  # 全名
     hashed_password = Column(String, nullable=False)
     role = Column(String, default="staff")  # staff, manager, admin
@@ -32,8 +32,3 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # 用户设置相关字段
-    theme = Column(String, default="system")  # 主题设置
-    notifications = Column(JSON, default=dict)
-    ai_settings = Column(JSON, default=dict)
-    avatar_url = Column(String)  # 头像URL

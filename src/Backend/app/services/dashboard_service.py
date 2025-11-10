@@ -262,25 +262,27 @@ class DashboardService:
         Returns:
             List[WarehouseUtilization]: 仓库利用率列表
         """
-        warehouses = db.query(Warehouse).filter(Warehouse.is_active == True).all()
+        warehouses = db.query(Warehouse).filter(Warehouse.is_active == True).all()  # type: ignore[arg-type]
 
         utilization_list = []
         for warehouse in warehouses:
-            if warehouse.capacity and warehouse.capacity > 0:
-                utilization_rate = round(
-                    (warehouse.current_usage / warehouse.capacity) * 100, 2
-                )
+            # 获取实际值并进行类型转换
+            capacity = float(warehouse.capacity) if warehouse.capacity else 0.0
+            current_usage = float(warehouse.current_usage) if warehouse.current_usage else 0.0
+
+            if capacity > 0:
+                utilization_rate = round((current_usage / capacity) * 100, 2)
             else:
                 utilization_rate = 0.0
 
             utilization_list.append(
                 WarehouseUtilization(
-                    warehouse_id=warehouse.id,
-                    warehouse_name=warehouse.name,
-                    warehouse_code=warehouse.code or f"WH{warehouse.id:03d}",
-                    capacity=warehouse.capacity or 0.0,
-                    current_usage=warehouse.current_usage or 0.0,
-                    utilization_rate=utilization_rate,
+                    warehouse_id=int(warehouse.id),
+                    warehouse_name=str(warehouse.name),
+                    warehouse_code=str(warehouse.code) if warehouse.code else f"WH{warehouse.id:03d}",
+                    capacity=capacity,
+                    current_usage=current_usage,
+                    utilization_rate=float(utilization_rate),
                 )
             )
 
@@ -309,9 +311,9 @@ class DashboardService:
 
         return [
             OrderStatusDistribution(
-                status=stat.status,
-                count=stat.count,
-                total_value=round(stat.total_value or 0.0, 2),
+                status=str(stat.status),
+                count=int(stat.count),  # type: ignore[arg-type]
+                total_value=round(float(stat.total_value or 0.0), 2),
             )
             for stat in order_stats
         ]

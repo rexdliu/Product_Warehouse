@@ -69,37 +69,44 @@ def register_user(
 ):
     """
     用户注册接口
-    
-    创建新用户账户。
-    
+
+    创建新用户账户。新用户默认角色为 staff（只读权限）。
+
     Args:
         db: 数据库会话依赖
         user_in: 用户创建数据
-        
+
     Returns:
         UserInDB: 创建的用户信息
-        
+
     Raises:
         HTTPException: 用户名或邮箱已存在时抛出 400 错误
     """
+    # 检查用户名是否已存在
     user = user_crud.get_by_username(db, username=user_in.username)
     if user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The user with this username already exists in the system.",
+            detail="用户名已被使用",
         )
-    
+
+    # 检查邮箱是否已存在
     user = user_crud.get_by_email(db, email=user_in.email)
     if user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The user with this email already exists in the system.",
+            detail="邮箱已被注册",
         )
-    user =user_crud.get_by_phone(db, phone=user_in.phone)
-    if user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The user with this phone number already exists in the system.",
-        )
+
+    # 检查手机号是否已存在（如果提供了手机号）
+    if user_in.phone:
+        user = user_crud.get_by_phone(db, phone=user_in.phone)
+        if user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="手机号已被注册",
+            )
+
+    # 创建用户
     user = user_crud.create(db, obj_in=user_in)
     return user
