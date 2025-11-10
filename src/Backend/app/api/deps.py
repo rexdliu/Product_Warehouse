@@ -10,6 +10,9 @@ from app.core.dependencies import (  # noqa: F401
     get_current_user,
     get_current_active_user,
     get_current_active_superuser,
+    require_admin,
+    require_manager_or_above,
+    require_staff_or_above,
 )
 
 __all__ = [
@@ -17,4 +20,7 @@ __all__ = [
     "get_current_user",
     "get_current_active_user",
     "get_current_active_superuser",
+    "require_admin",
+    "require_manager_or_above",
+    "require_staff_or_above",
 ]

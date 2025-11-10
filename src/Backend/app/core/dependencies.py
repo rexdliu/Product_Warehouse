@@ -88,18 +88,86 @@ async def get_current_active_superuser(
 ) -> User:
     """
     获取当前超级用户
-    
+
     Args:
         current_user: 当前活跃用户依赖项
-        
+
     Returns:
         User: 当前超级用户对象
-        
+
     Raises:
         HTTPException: 如果用户不是超级用户
     """
     if not user_crud.is_superuser(current_user):
         raise HTTPException(
             status_code=400, detail="The user doesn't have enough privileges"
+        )
+    return current_user
+
+# 基于角色的权限控制依赖
+
+async def require_admin(
+    current_user: User = Depends(get_current_active_user)
+) -> User:
+    """
+    要求管理员权限
+
+    Args:
+        current_user: 当前活跃用户依赖项
+
+    Returns:
+        User: 当前管理员用户对象
+
+    Raises:
+        HTTPException: 如果用户不是 admin 角色
+    """
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="需要管理员权限"
+        )
+    return current_user
+
+async def require_manager_or_above(
+    current_user: User = Depends(get_current_active_user)
+) -> User:
+    """
+    要求管理员或仓库管理员权限
+
+    Args:
+        current_user: 当前活跃用户依赖项
+
+    Returns:
+        User: 当前用户对象
+
+    Raises:
+        HTTPException: 如果用户不是 admin 或 manager 角色
+    """
+    if current_user.role not in ["admin", "manager"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="需要管理员或仓库管理员权限"
+        )
+    return current_user
+
+async def require_staff_or_above(
+    current_user: User = Depends(get_current_active_user)
+) -> User:
+    """
+    要求员工及以上权限（任何认证用户）
+
+    Args:
+        current_user: 当前活跃用户依赖项
+
+    Returns:
+        User: 当前用户对象
+
+    Raises:
+        HTTPException: 如果用户不是 admin、manager 或 staff 角色
+    """
+    if current_user.role not in ["admin", "manager", "staff"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="需要有效的用户角色"
         )
     return current_user
