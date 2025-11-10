@@ -277,9 +277,9 @@ class DashboardService:
 
             utilization_list.append(
                 WarehouseUtilization(
-                    warehouse_id=int(warehouse.id),
-                    warehouse_name=str(warehouse.name),
-                    warehouse_code=str(warehouse.code) if warehouse.code else f"WH{warehouse.id:03d}",  # type: ignore[truthy-bool]
+                    warehouse_id=warehouse.id,  # type: ignore[arg-type]
+                    warehouse_name=warehouse.name,  # type: ignore[arg-type]
+                    warehouse_code=warehouse.code if warehouse.code else f"WH{warehouse.id:03d}",  # type: ignore[arg-type,truthy-bool]
                     capacity=capacity,
                     current_usage=current_usage,
                     utilization_rate=float(utilization_rate),
