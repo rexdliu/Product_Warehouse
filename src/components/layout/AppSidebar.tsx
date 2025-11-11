@@ -1,15 +1,17 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Package, 
-  BarChart3, 
-  MapPin, 
+import {
+  LayoutDashboard,
+  Package,
+  BarChart3,
+  MapPin,
   FileText,
   Bot,
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ShoppingCart,
+  Warehouse
 } from 'lucide-react';
 import { useUIStore } from '@/stores';
 import { cn } from '@/lib/utils';
@@ -17,7 +19,9 @@ import { Button } from '@/components/ui/button';
 
 const navigation = [
   { name: '仪表盘', href: '/', icon: LayoutDashboard },
-  { name: '库存管理', href: '/inventory', icon: Package },
+  { name: '订单管理', href: '/orders', icon: ShoppingCart },
+  { name: '库存调整', href: '/inventory-management', icon: Warehouse },
+  { name: '库存查询', href: '/inventory', icon: Package },
   { name: '智能分析', href: '/analytics', icon: BarChart3 },
   { name: '仓库地图', href: '/warehouse', icon: MapPin },
   { name: '智能报告', href: '/reports', icon: FileText },

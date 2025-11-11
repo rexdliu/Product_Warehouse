@@ -230,7 +230,6 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
         className={cn("flex-shrink-0 flex items-center justify-between p-4 border-b", !isFullscreen && "cursor-move")}
         onMouseDown={handleMouseDown}
       >
-        {/* ... Header content is unchanged ... */}
          <div className="flex items-center space-x-3">
           <div className="h-8 w-8 rounded-full overflow-hidden flex-shrink-0">
             <img src={aiIcon} alt="AI Assistant" className="h-full w-full object-cover" />
@@ -258,7 +257,6 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
       {/* Messages: Height is now reliably set via inline style */}
       <ScrollArea className="flex-grow p-4" style={{ height: `calc(100% - 160px)` }}>
         <div className="space-y-4">
-          {/* ... Messages mapping is unchanged ... */}
           {messages.map((message) => (
             <div key={message.id} className={cn("flex", message.role === 'user' ? 'justify-end' : 'justify-start')}>
               <div className={cn("max-w-[80%] rounded-lg px-3 py-2 text-sm", message.role === 'user' ? "bg-primary text-primary-foreground" : "bg-muted")}>
@@ -284,7 +282,6 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
       {/* Suggestions */}
       {suggestions.length > 0 && (
         <div className="flex-shrink-0 px-4 py-2 border-t">
-          {/* ... Suggestions mapping is unchanged ... */}
           <div className="flex flex-wrap gap-1">
             {suggestions.map((suggestion, index) => (
               <Badge key={index} variant="secondary" className="cursor-pointer text-xs hover:bg-accent" onClick={() => handleSuggestionClick(suggestion)}>
@@ -297,7 +294,6 @@ export const DraggableAI: React.FC<DraggableAIProps> = ({ hidden = false }) => {
 
       {/* Input */}
       <div className="flex-shrink-0 p-4 border-t">
-        {/* ... Input section is unchanged ... */}
         <div className="flex space-x-2">
           <Button variant="ghost" size="sm" className="h-9 w-9 p-0"><Paperclip className="h-4 w-4" /></Button>
           <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="询问库存、预测或见解..." onKeyPress={(e) => e.key === 'Enter' && handleSend()} className="flex-1" />

@@ -47,11 +47,22 @@ class SalesOrderUpdate(BaseModel):
     quantity: Optional[int] = None
     total_value: Optional[float] = None
     order_date: Optional[datetime] = None
+    status: Optional[str] = None
+    warehouse_id: Optional[int] = None
+    delivery_date: Optional[datetime] = None
+    notes: Optional[str] = None
 
 
 class SalesOrderInDB(SalesOrderBase):
     id: int
+    status: str
+    warehouse_id: Optional[int] = None
+    delivery_date: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    user_id: Optional[int] = None
+    notes: Optional[str] = None
     created_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

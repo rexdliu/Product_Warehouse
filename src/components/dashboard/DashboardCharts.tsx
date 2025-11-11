@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -15,6 +15,7 @@ import {
   ChartOptions,
 } from 'chart.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiService } from '@/services/api';
 
 // Register all necessary components for Chart.js
 ChartJS.register(
@@ -22,73 +23,7 @@ ChartJS.register(
   ArcElement, Title, Tooltip, Legend, Filler
 );
 
-// --- DATA PROCESSING LOGIC ---
-const generateChartData = (period: 'daily' | 'weekly' | 'monthly') => {
-  let labels: string[] = [];
-  let inventoryLevels: number[] = [];
-  let salesData: number[] = [];
-  let movementDataPoints: number[] = [];
-
-  switch (period) {
-    case 'daily':
-      labels = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'];
-      inventoryLevels = [1020, 1010, 1015, 1005, 990, 995, 1000];
-      salesData = [20, 25, 15, 30, 28, 35, 40];
-      movementDataPoints = [25, 30, 45, 50, 40, 60, 70];
-      break;
-    case 'weekly':
-      labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-      inventoryLevels = [950, 1020, 980, 1050];
-      salesData = [150, 180, 160, 200];
-      movementDataPoints = [300, 500, 450, 550];
-      break;
-    case 'monthly':
-    default:
-      labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-      inventoryLevels = [850, 920, 780, 1100, 950, 1020];
-      salesData = [110, 150, 250, 200, 310, 380];
-      movementDataPoints = [1200, 1900, 3000, 2500, 3500, 4200];
-      break;
-  }
-
-  return {
-    inventoryTrendData: {
-      labels,
-      datasets: [
-        {
-          label: '库存量', // 标签保持为“库存量”
-          data: inventoryLevels,
-          borderColor: 'hsl(var(--primary))',
-          backgroundColor: 'hsl(var(--primary) / 0.1)',
-          tension: 0.4,
-          fill: false, // 确保不填充
-        },
-        {
-          label: '销售额',
-          data: salesData,
-          borderColor: 'hsl(var(--accent))',
-          backgroundColor: 'hsl(var(--accent) / 0.1)',
-          tension: 0.4,
-          fill: false, // 确保不填充
-        },
-      ],
-    },
-    movementData: {
-      labels,
-      datasets: [
-        {
-          label: '移动物品数',
-          data: movementDataPoints,
-          backgroundColor: 'hsl(var(--primary))',
-          borderRadius: 4,
-        },
-      ],
-    }
-  };
-};
-
 // --- CHART OPTIONS (Simplified) ---
-// 移除了复杂的 onClick 逻辑，恢复 Chart.js 默认行为
 const chartOptions: ChartOptions<'line' | 'bar'> = {
   responsive: true,
   maintainAspectRatio: false,
@@ -113,27 +48,120 @@ const doughnutOptions: ChartOptions<'doughnut'> = {
   },
 };
 
-const categoryData = {
-    labels: ['Electronics', 'Furniture', 'Clothing', 'Books', 'Home & Garden'],
-    datasets: [
-      {
-        data: [35, 25, 20, 12, 8],
-        backgroundColor: [
-            'rgb(59, 130, 246)', 'rgb(239, 68, 68)', 'rgb(34, 197, 94)',
-            'rgb(245, 158, 11)', 'rgb(168, 85, 247)'
-        ],
-        borderWidth: 0,
-      },
-    ],
-};
-
 // --- COMPONENT ---
 interface DashboardChartsProps {
   timePeriod: 'daily' | 'weekly' | 'monthly';
 }
 
 export const DashboardCharts: React.FC<DashboardChartsProps> = ({ timePeriod }) => {
-  const { inventoryTrendData, movementData } = generateChartData(timePeriod);
+  const [loading, setLoading] = useState(true);
+  const [inventoryTrendData, setInventoryTrendData] = useState<any>(null);
+  const [movementData, setMovementData] = useState<any>(null);
+  const [categoryData, setCategoryData] = useState<any>(null);
+
+  useEffect(() => {
+    loadChartData();
+  }, [timePeriod]);
+
+  const loadChartData = async () => {
+    try {
+      setLoading(true);
+
+      // 根据周期设置天数
+      let days = 30;
+      if (timePeriod === 'daily') days = 7;
+      else if (timePeriod === 'monthly') days = 180;
+
+      // 并行加载所有图表数据
+      const [trendData, movement, categories] = await Promise.all([
+        apiService.getInventorySalesTrend(timePeriod, days),
+        apiService.getProductMovement(timePeriod, days),
+        apiService.getCategoryDistribution(),
+      ]);
+
+      // 设置库存/销售趋势数据
+      setInventoryTrendData({
+        labels: trendData.labels,
+        datasets: [
+          {
+            label: '库存量',
+            data: trendData.inventory_levels,
+            borderColor: 'hsl(var(--primary))',
+            backgroundColor: 'hsl(var(--primary) / 0.1)',
+            tension: 0.4,
+            fill: false,
+          },
+          {
+            label: '销售额',
+            data: trendData.sales_data,
+            borderColor: 'hsl(var(--accent))',
+            backgroundColor: 'hsl(var(--accent) / 0.1)',
+            tension: 0.4,
+            fill: false,
+          },
+        ],
+      });
+
+      // 设置产品动向数据
+      setMovementData({
+        labels: movement.labels,
+        datasets: [
+          {
+            label: '移动物品数',
+            data: movement.movement_data,
+            backgroundColor: 'hsl(var(--primary))',
+            borderRadius: 4,
+          },
+        ],
+      });
+
+      // 设置分类分布数据
+      setCategoryData({
+        labels: categories.labels,
+        datasets: [
+          {
+            data: categories.data,
+            backgroundColor: [
+              'rgb(59, 130, 246)',
+              'rgb(239, 68, 68)',
+              'rgb(34, 197, 94)',
+              'rgb(245, 158, 11)',
+              'rgb(168, 85, 247)',
+              'rgb(236, 72, 153)',
+              'rgb(20, 184, 166)',
+            ],
+            borderWidth: 0,
+          },
+        ],
+      });
+    } catch (error) {
+      console.error('加载图表数据失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading || !inventoryTrendData || !movementData || !categoryData) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="lg:col-span-2">
+          <CardContent className="h-[300px] flex items-center justify-center">
+            <p className="text-muted-foreground">加载中...</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="h-[250px] flex items-center justify-center">
+            <p className="text-muted-foreground">加载中...</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="h-[250px] flex items-center justify-center">
+            <p className="text-muted-foreground">加载中...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

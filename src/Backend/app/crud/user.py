@@ -59,11 +59,11 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     def create(self, db: Session, *, obj_in: UserCreate) -> User:
         """
         创建新用户
-        
+
         Args:
             db: 数据库会话
             obj_in: 用户创建模式实例
-            
+
         Returns:
             User: 创建的用户对象
         """
@@ -71,12 +71,10 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             username=obj_in.username,
             email=obj_in.email,
             phone=obj_in.phone,
+            full_name=obj_in.full_name,
             hashed_password=get_password_hash(obj_in.password),
+            role=obj_in.role or "staff",
             is_active=True,
-            notifications=dict(obj_in.notifications or {}),
-            ai_settings=dict(obj_in.ai_settings or {}),
-            avatar_url=obj_in.avatar_url,
-            theme=obj_in.theme or "system",
         )
         db.add(db_obj)
         db.commit()

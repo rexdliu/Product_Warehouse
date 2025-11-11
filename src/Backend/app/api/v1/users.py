@@ -15,8 +15,6 @@ from app.core.database import get_db
 from app.crud.user import CRUDUser, user as _user_crud
 from app.schemas.user import (
     UserInDB,
-    UserSettings,
-    UserSettingsUpdate,
     UserPasswordUpdate,
     UserUpdate,
 )
@@ -85,68 +83,3 @@ def update_password(
     db.add(current_user)
     db.commit()
     return {"msg": "Password updated successfully"}
-
-@router.get("/settings", response_model=UserSettings)
-def read_user_settings(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-) -> Any:
-    """
-    获取当前用户设置
-    
-    Args:
-        db: 数据库会话依赖
-        current_user: 当前认证用户依赖
-        
-    Returns:
-        UserSettings: 当前用户设置
-    """
-    # 从数据库中获取用户设置
-    theme_value = cast(Optional[str], current_user.theme) or "system"
-    notifications_value = cast(Optional[Dict[str, Any]], current_user.notifications)
-    ai_settings_value = cast(Optional[Dict[str, Any]], current_user.ai_settings)
-    avatar_value = cast(Optional[str], current_user.avatar_url)
-
-    settings = UserSettings(
-        theme=theme_value,
-        notifications=notifications_value,
-        ai_settings=ai_settings_value,
-        avatar_url=avatar_value
-    )
-    return settings
-
-@router.put("/settings", response_model=UserSettings)
-def update_user_settings(
-    *,
-    db: Session = Depends(get_db),
-    user_settings_in: UserSettingsUpdate,
-    current_user: User = Depends(get_current_active_user)
-) -> Any:
-    """
-    更新当前用户设置
-    
-    Args:
-        db: 数据库会话依赖
-        user_settings_in: 用户设置更新数据
-        current_user: 当前认证用户依赖
-        
-    Returns:
-        UserSettings: 更新后的用户设置
-    """
-    # 更新用户设置到数据库
-    update_data = user_settings_in.model_dump(exclude_unset=True)
-    user_update = UserUpdate(**update_data)
-    user = user_crud.update(db, db_obj=current_user, obj_in=user_update)
-
-    theme_value = cast(Optional[str], user.theme) or "system"
-    notifications_value = cast(Optional[Dict[str, Any]], user.notifications)
-    ai_settings_value = cast(Optional[Dict[str, Any]], user.ai_settings)
-    avatar_value = cast(Optional[str], user.avatar_url)
-
-    settings = UserSettings(
-        theme=theme_value,
-        notifications=notifications_value,
-        ai_settings=ai_settings_value,
-        avatar_url=avatar_value
-    )
-    return settings

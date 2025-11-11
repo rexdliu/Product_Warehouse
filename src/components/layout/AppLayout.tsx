@@ -47,6 +47,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     document.body.classList.toggle('no-tooltips', !showTooltips);
   }, [showAnimations, showTooltips]);
 
+  const isLoginPage = location.pathname === '/login';
+
+  if (isLoginPage) {
+    return <div>{children}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -64,7 +69,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </div>
       </div>
 
-      <DraggableAI hidden={location.pathname === '/ai'|| location.pathname === '/login'} />
+      <DraggableAI hidden={location.pathname === '/ai'} />
     </div>
   );
 };

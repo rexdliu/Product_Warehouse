@@ -15,29 +15,39 @@ from app.core.database import Base
 class ProductCategory(Base):
     """
     产品分类模型
-    
-    用于对产品进行分类管理，例如电子产品、服装、食品等。
+
+    用于对产品进行分类管理，例如发动机、零件、机油、滤芯等。
     """
-    
+
     __tablename__ = "product_categories"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True, nullable=False)
+    code = Column(String, unique=True)  # 分类代码，如 "ENGINE", "PARTS", "OIL"
     description = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Product(Base):
     """
     产品模型
-    
+
     用于存储产品的基本信息，包括名称、SKU、价格、描述等。
+    针对 Cummins 零件优化，支持零件号、发动机型号等字段。
     """
-    
+
     __tablename__ = "products"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, nullable=False)
     sku = Column(String, unique=True, index=True, nullable=False)
+
+    # Cummins 特定字段
+    part_number = Column(String, unique=True, index=True)  # Cummins 零件号，如 "3803682"
+    engine_model = Column(String, index=True)  # 适用发动机型号，如 "6BT5.9", "ISF2.8"
+    manufacturer = Column(String, default="Cummins")  # 制造商
+    unit = Column(String, default="pcs")  # 单位: pcs=件, box=箱, liter=升
+    min_stock_level = Column(Integer, default=10)  # 最低库存预警线
+
     description = Column(Text)
     price = Column(Float, nullable=False)
     cost = Column(Float)
@@ -46,6 +56,6 @@ class Product(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
     # 关系
     category = relationship("ProductCategory")

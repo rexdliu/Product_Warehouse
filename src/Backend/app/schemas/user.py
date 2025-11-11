@@ -20,16 +20,14 @@ class UserBase(BaseModel):
     """用户基础模型，包含所有用户共享的字段"""
     username: str
     email: str
-    phone: str
+    phone: Optional[str] = None
+    full_name: Optional[str] = None
 
 # 创建用户模型
 class UserCreate(UserBase):
     """创建用户模型，包含创建用户时需要的字段"""
     password: str
-    notifications: Optional[Dict[str, Any]] = None
-    ai_settings: Optional[Dict[str, Any]] = None
-    avatar_url: Optional[str] = None
-    theme: Optional[str] = None
+    role: Optional[str] = "staff"  # 默认角色为 staff
 
 # 更新用户模型
 class UserUpdate(BaseModel):
@@ -37,48 +35,43 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+    full_name: Optional[str] = None
     password: Optional[str] = None
+    role: Optional[str] = None
     is_active: Optional[bool] = None
     is_superuser: Optional[bool] = None
-    notifications: Optional[Dict[str, Any]] = None
-    ai_settings: Optional[Dict[str, Any]] = None
-    avatar_url: Optional[str] = None
-    theme: Optional[str] = None
 
 # 数据库用户模型
 class UserInDB(UserBase):
     """数据库用户模型，包含从数据库中获取的用户信息"""
     id: int
+    role: str
     is_active: bool
     is_superuser: bool
     created_at: datetime
-    updated_at: Optional[datetime]
-    notifications: Optional[Dict[str, Any]] = None
-    ai_settings: Optional[Dict[str, Any]] = None
-    avatar_url: Optional[str] = None
-    theme: Optional[str] = None
-    
+    updated_at: Optional[datetime] = None
+
     class Config:
         from_attributes = True
-
-# 用户设置模型
-class UserSettings(BaseModel):
-    """用户设置模型，包含用户个性化设置"""
-    theme: str = "system"
-    notifications: Optional[Dict[str, Any]] = None
-    ai_settings: Optional[Dict[str, Any]] = None
-    avatar_url: Optional[str] = None
-
-# 用户设置更新模型
-class UserSettingsUpdate(UserSettings):
-    """用户设置更新模型"""
-    pass
 
 # 用户密码更新模型
 class UserPasswordUpdate(BaseModel):
     """用户密码更新模型"""
     current_password: str
     new_password: str
+class UserSettings(BaseModel):
+    """用户设置模型"""
+    theme: str
+    notification_settings: Dict[str, Any]
+    notifications: Dict[str, Any]
+    avatar_url: str
+    ai_settings: Dict[str, Any]
+class UserSettingsUpdate(BaseModel):
+    """用户设置更新模型"""
+    theme: str
+    notification_settings: Optional[Dict[str, Any]] = None
+    avatar_url: Optional[str] = None
+    ai_seetings: Optional[Dict[str, Any]] = None
 
 # 登录模型
 class LoginRequest(BaseModel):

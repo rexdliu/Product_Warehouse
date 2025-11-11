@@ -46,7 +46,14 @@ export interface SalesOrder {
   quantity: number;
   totalValue: number;
   orderDate: string;
+  status: string;
+  warehouseId?: number;
+  deliveryDate?: string;
+  completedAt?: string;
+  userId?: number;
+  notes?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface RAGQueryResponse {
@@ -100,7 +107,14 @@ interface SalesOrderDTO {
   quantity: number;
   total_value: number;
   order_date: string;
+  status: string;
+  warehouse_id?: number;
+  delivery_date?: string;
+  completed_at?: string;
+  user_id?: number;
+  notes?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 interface ProductCategoryDTO {
@@ -117,14 +131,141 @@ export interface ProductCategory {
   createdAt: string;
 }
 
+// Dashboard API 类型定义
+export interface DashboardStats {
+  total_products: number;
+  total_inventory: number;
+  low_stock_items: number;
+  out_of_stock: number;
+  total_warehouses: number;
+  pending_orders: number;
+  total_inventory_value: number;
+}
+
+export interface StockStatus {
+  status: string;
+  count: number;
+  percentage: number;
+}
+
+export interface ActivityLog {
+  id: number;
+  activity_type: string;
+  action: string;
+  item_name: string;
+  user_id?: number;
+  reference_id?: number;
+  reference_type?: string;
+  created_at: string;
+}
+
+export interface InventoryAlert {
+  id: number;
+  product_id: number;
+  product_name: string;
+  product_sku: string;
+  warehouse_name: string;
+  current_quantity: number;
+  min_stock_level: number;
+  alert_type: string;
+  severity: string;
+}
+
+export interface TopProduct {
+  product_id: number;
+  product_name: string;
+  sku: string;
+  total_sold: number;
+  total_revenue: number;
+}
+
+export interface WarehouseUtilization {
+  warehouse_id: number;
+  warehouse_name: string;
+  warehouse_code: string;
+  capacity: number;
+  current_usage: number;
+  utilization_rate: number;
+}
+
+export interface OrderStatusDistribution {
+  status: string;
+  count: number;
+  total_value: number;
+}
+
+export interface DashboardResponse {
+  stats: DashboardStats;
+  stock_status: StockStatus[];
+  recent_activities: ActivityLog[];
+  inventory_alerts: InventoryAlert[];
+  top_products: TopProduct[];
+  warehouse_utilization: WarehouseUtilization[];
+  order_status_distribution: OrderStatusDistribution[];
+}
+
+// Auth API 类型定义
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+}
+
+export interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+  phone?: string;
+  full_name?: string;
+  role?: string;
+}
+
+export interface UserResponse {
+  id: number;
+  username: string;
+  email: string;
+  full_name?: string;
+  role: string;
+  is_active: boolean;
+}
+
 class ApiService {
+  private token: string | null = null;
+
+  setToken(token: string) {
+    this.token = token;
+    localStorage.setItem('access_token', token);
+  }
+
+  getToken(): string | null {
+    if (!this.token) {
+      this.token = localStorage.getItem('access_token');
+    }
+    return this.token;
+  }
+
+  clearToken() {
+    this.token = null;
+    localStorage.removeItem('access_token');
+  }
   private async request<T>(url: string, init?: RequestInit): Promise<T> {
+    const token = this.getToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...init?.headers as Record<string, string>,
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...init?.headers,
-      },
       ...init,
+      headers,
     });
 
     if (!response.ok) {
@@ -196,7 +337,14 @@ class ApiService {
       quantity: item.quantity,
       totalValue: item.total_value,
       orderDate: item.order_date,
+      status: item.status,
+      warehouseId: item.warehouse_id,
+      deliveryDate: item.delivery_date,
+      completedAt: item.completed_at,
+      userId: item.user_id,
+      notes: item.notes,
       createdAt: item.created_at,
+      updatedAt: item.updated_at,
     }));
   }
 
@@ -215,6 +363,184 @@ class ApiService {
       description: item.description,
       createdAt: item.created_at,
     }));
+  }
+
+  // Dashboard API 方法
+  async getDashboard(): Promise<DashboardResponse> {
+    return this.request<DashboardResponse>('/api/v1/dashboard/');
+  }
+
+  async getDashboardStats(): Promise<DashboardStats> {
+    return this.request<DashboardStats>('/api/v1/dashboard/stats');
+  }
+
+  async getStockStatus(): Promise<StockStatus[]> {
+    return this.request<StockStatus[]>('/api/v1/dashboard/stock-status');
+  }
+
+  async getRecentActivities(limit = 10): Promise<ActivityLog[]> {
+    return this.request<ActivityLog[]>(`/api/v1/dashboard/activities?limit=${limit}`);
+  }
+
+  async getInventoryAlerts(limit = 20): Promise<InventoryAlert[]> {
+    return this.request<InventoryAlert[]>(`/api/v1/dashboard/alerts?limit=${limit}`);
+  }
+
+  async getTopProducts(limit = 5, days = 30): Promise<TopProduct[]> {
+    return this.request<TopProduct[]>(`/api/v1/dashboard/top-products?limit=${limit}&days=${days}`);
+  }
+
+  async getWarehouseUtilization(): Promise<WarehouseUtilization[]> {
+    return this.request<WarehouseUtilization[]>('/api/v1/dashboard/warehouse-utilization');
+  }
+
+  async getOrderStatusDistribution(): Promise<OrderStatusDistribution[]> {
+    return this.request<OrderStatusDistribution[]>('/api/v1/dashboard/order-status-distribution');
+  }
+
+  async getInventorySalesTrend(period: string = 'weekly', days: number = 30): Promise<{
+    labels: string[];
+    inventory_levels: number[];
+    sales_data: number[];
+  }> {
+    return this.request<{
+      labels: string[];
+      inventory_levels: number[];
+      sales_data: number[];
+    }>(`/api/v1/dashboard/inventory-sales-trend?period=${period}&days=${days}`);
+  }
+
+  async getProductMovement(period: string = 'weekly', days: number = 30): Promise<{
+    labels: string[];
+    movement_data: number[];
+  }> {
+    return this.request<{
+      labels: string[];
+      movement_data: number[];
+    }>(`/api/v1/dashboard/product-movement?period=${period}&days=${days}`);
+  }
+
+  async getCategoryDistribution(): Promise<{
+    labels: string[];
+    data: number[];
+  }> {
+    return this.request<{
+      labels: string[];
+      data: number[];
+    }>('/api/v1/dashboard/category-distribution');
+  }
+
+  // Auth API 方法
+  async login(username: string, password: string): Promise<LoginResponse> {
+    const formData = new URLSearchParams();
+    formData.append('username', username);
+    formData.append('password', password);
+
+    const response = await this.request<LoginResponse>('/api/v1/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString(),
+    });
+
+    // 保存 token
+    this.setToken(response.access_token);
+    return response;
+  }
+
+  async register(data: RegisterRequest): Promise<UserResponse> {
+    return this.request<UserResponse>('/api/v1/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getCurrentUser(): Promise<UserResponse> {
+    return this.request<UserResponse>('/api/v1/users/me');
+  }
+
+  logout() {
+    this.clearToken();
+  }
+
+  // Order Management methods
+  async updateOrderStatus(orderId: number, status: string, notes?: string): Promise<SalesOrder> {
+    const data = await this.request<SalesOrderDTO>(`/api/v1/sales/orders/${orderId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, notes }),
+    });
+    return {
+      id: data.id,
+      orderCode: data.order_code,
+      distributorId: data.distributor_id,
+      productId: data.product_id,
+      productName: data.product_name,
+      quantity: data.quantity,
+      totalValue: data.total_value,
+      orderDate: data.order_date,
+      status: data.status,
+      warehouseId: data.warehouse_id,
+      deliveryDate: data.delivery_date,
+      completedAt: data.completed_at,
+      userId: data.user_id,
+      notes: data.notes,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    };
+  }
+
+  async updateOrder(orderId: number, updates: Partial<SalesOrder>): Promise<SalesOrder> {
+    const requestBody: Record<string, any> = {};
+    if (updates.quantity !== undefined) requestBody.quantity = updates.quantity;
+    if (updates.totalValue !== undefined) requestBody.total_value = updates.totalValue;
+    if (updates.status !== undefined) requestBody.status = updates.status;
+    if (updates.warehouseId !== undefined) requestBody.warehouse_id = updates.warehouseId;
+    if (updates.deliveryDate !== undefined) requestBody.delivery_date = updates.deliveryDate;
+    if (updates.notes !== undefined) requestBody.notes = updates.notes;
+
+    const data = await this.request<SalesOrderDTO>(`/api/v1/sales/orders/${orderId}`, {
+      method: 'PUT',
+      body: JSON.stringify(requestBody),
+    });
+    return {
+      id: data.id,
+      orderCode: data.order_code,
+      distributorId: data.distributor_id,
+      productId: data.product_id,
+      productName: data.product_name,
+      quantity: data.quantity,
+      totalValue: data.total_value,
+      orderDate: data.order_date,
+      status: data.status,
+      warehouseId: data.warehouse_id,
+      deliveryDate: data.delivery_date,
+      completedAt: data.completed_at,
+      userId: data.user_id,
+      notes: data.notes,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    };
+  }
+
+  // Inventory Management methods
+  async updateInventoryQuantity(inventoryId: number, quantity: number): Promise<InventoryItem> {
+    const data = await this.request<InventoryDTO>(`/api/v1/inventory/items/${inventoryId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ quantity }),
+    });
+    return {
+      id: data.id,
+      productId: data.product_id,
+      warehouseId: data.warehouse_id,
+      quantity: data.quantity,
+      reservedQuantity: data.reserved_quantity,
+      updatedAt: data.updated_at,
+    };
+  }
+
+  async getWarehouses(): Promise<Array<{id: number, name: string, location?: string}>> {
+    return this.request<Array<{id: number, name: string, location?: string}>>('/api/v1/inventory/warehouses');
   }
 }
 
