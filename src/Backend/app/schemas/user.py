@@ -59,6 +59,19 @@ class UserPasswordUpdate(BaseModel):
     """用户密码更新模型"""
     current_password: str
     new_password: str
+class UserSettings(BaseModel):
+    """用户设置模型"""
+    theme: str
+    notification_settings: Dict[str, Any]
+    notifications: Dict[str, Any]
+    avatar_url: str
+    ai_settings: Dict[str, Any]
+class UserSettingsUpdate(BaseModel):
+    """用户设置更新模型"""
+    theme: str
+    notification_settings: Optional[Dict[str, Any]] = None
+    avatar_url: Optional[str] = None
+    ai_seetings: Optional[Dict[str, Any]] = None
 
 # 登录模型
 class LoginRequest(BaseModel):
