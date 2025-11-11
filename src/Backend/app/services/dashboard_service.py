@@ -40,42 +40,43 @@ class DashboardService:
             DashboardStats: 统计数据
         """
         # 产品总数
-        total_products = db.query(Product).filter(Product.is_active == True).count()
+        total_products = db.query(Product).filter(Product.is_active == True).count()  # type: ignore[arg-type]
 
         # 库存总量
-        total_inventory = db.query(func.sum(Inventory.quantity)).scalar() or 0
+        total_inventory_result = db.query(func.sum(Inventory.quantity)).scalar()
+        total_inventory = int(total_inventory_result) if total_inventory_result else 0
 
         # 低库存商品数（库存低于最低库存水平）
         low_stock_items = (
             db.query(Inventory)
-            .join(Product)
+            .join(Product, Inventory.product_id == Product.id)
             .filter(
-                Inventory.quantity <= Product.min_stock_level,
-                Inventory.quantity > 0,
+                Inventory.quantity <= Product.min_stock_level,  # type: ignore[arg-type]
+                Inventory.quantity > 0,  # type: ignore[arg-type]
             )
             .count()
         )
 
         # 缺货商品数
-        out_of_stock = db.query(Inventory).filter(Inventory.quantity == 0).count()
+        out_of_stock = db.query(Inventory).filter(Inventory.quantity == 0).count()  # type: ignore[arg-type]
 
         # 仓库总数
-        total_warehouses = db.query(Warehouse).filter(Warehouse.is_active == True).count()
+        total_warehouses = db.query(Warehouse).filter(Warehouse.is_active == True).count()  # type: ignore[arg-type]
 
         # 待处理订单数
         pending_orders = (
             db.query(SalesOrder)
-            .filter(SalesOrder.status.in_(["pending", "processing"]))
+            .filter(SalesOrder.status.in_(["pending", "processing"]))  # type: ignore[arg-type]
             .count()
         )
 
         # 库存总价值（库存数量 × 产品价格）
-        inventory_value = (
+        inventory_value_result = (
             db.query(func.sum(Inventory.quantity * Product.price))
-            .join(Product)
+            .join(Product, Inventory.product_id == Product.id)
             .scalar()
-            or 0.0
         )
+        inventory_value = float(inventory_value_result) if inventory_value_result else 0.0
 
         return DashboardStats(
             total_products=total_products,
@@ -105,24 +106,24 @@ class DashboardService:
         # 正常库存
         normal_stock = (
             db.query(Inventory)
-            .join(Product)
-            .filter(Inventory.quantity > Product.min_stock_level)
+            .join(Product, Inventory.product_id == Product.id)
+            .filter(Inventory.quantity > Product.min_stock_level)  # type: ignore[arg-type]
             .count()
         )
 
         # 低库存
         low_stock = (
             db.query(Inventory)
-            .join(Product)
+            .join(Product, Inventory.product_id == Product.id)
             .filter(
-                Inventory.quantity <= Product.min_stock_level,
-                Inventory.quantity > 0,
+                Inventory.quantity <= Product.min_stock_level,  # type: ignore[arg-type]
+                Inventory.quantity > 0,  # type: ignore[arg-type]
             )
             .count()
         )
 
         # 缺货
-        out_of_stock = db.query(Inventory).filter(Inventory.quantity == 0).count()
+        out_of_stock = db.query(Inventory).filter(Inventory.quantity == 0).count()  # type: ignore[arg-type]
 
         return [
             StockStatus(
@@ -182,15 +183,15 @@ class DashboardService:
             db.query(Inventory, Product, Warehouse)
             .join(Product, Inventory.product_id == Product.id)
             .join(Warehouse, Inventory.warehouse_id == Warehouse.id)
-            .filter(Inventory.quantity <= Product.min_stock_level)
+            .filter(Inventory.quantity <= Product.min_stock_level)  # type: ignore[arg-type]
             .order_by(Inventory.quantity)
             .limit(limit)
             .all()
         )
 
         for inventory, product, warehouse in low_stock_items:
-            alert_type = "out_of_stock" if inventory.quantity == 0 else "low_stock"
-            severity = "critical" if inventory.quantity == 0 else "warning"
+            alert_type = "out_of_stock" if inventory.quantity == 0 else "low_stock"  # type: ignore[comparison-overlap]
+            severity = "critical" if inventory.quantity == 0 else "warning"  # type: ignore[comparison-overlap]
 
             alerts.append(
                 InventoryAlert(
@@ -232,8 +233,8 @@ class DashboardService:
                 func.sum(SalesOrder.total_value).label("total_revenue"),
             )
             .join(Product, SalesOrder.product_id == Product.id)
-            .filter(SalesOrder.order_date >= start_date)
-            .filter(SalesOrder.status != "cancelled")
+            .filter(SalesOrder.order_date >= start_date)  # type: ignore[arg-type]
+            .filter(SalesOrder.status != "cancelled")  # type: ignore[arg-type]
             .group_by(SalesOrder.product_id, SalesOrder.product_name, Product.sku)
             .order_by(desc("total_sold"))
             .limit(limit)
