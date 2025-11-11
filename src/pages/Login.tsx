@@ -19,20 +19,21 @@ const Login = () => {
     setError('');
 
     try {
-      // 调用登录 API
-      await apiService.login(username, password);
+      // 调用登录 API，获取token
+      const loginResponse = await apiService.login(username, password);
+      const token = loginResponse.access_token;
 
       // 获取用户信息
       const user = await apiService.getCurrentUser();
 
-      // 更新状态
+      // 更新状态（传递token）
       login({
         id: user.id.toString(),
         name: user.full_name || user.username,
         email: user.email,
         account: user.username,
         role: user.role,
-      });
+      }, token);
 
       // 跳转到首页
       navigate('/');

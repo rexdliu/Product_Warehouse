@@ -9,6 +9,7 @@ Toaster&Sonner：用于显示“toast”通知。注释//toaster -- for 临时�
 BrowserRouter：这是库中导航系统的核心react-router-dom。它将你的应用连接到浏览器的 URL，让你无需重新加载整个网站即可创建不同的“页面”。
 */
 
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +17,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { useAuthStore } from "@/stores";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import AIAssistantPage from "./pages/AIAssitantPage";
@@ -30,7 +32,15 @@ import OrderManagement from "./pages/OrderManagement";
 import InventoryManagement from "./pages/InventoryManagement";
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  const initializeAuth = useAuthStore((state) => state.initializeAuth);
+
+  useEffect(() => {
+    // 应用启动时初始化认证状态
+    initializeAuth();
+  }, [initializeAuth]);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -68,6 +78,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

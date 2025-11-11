@@ -17,19 +17,74 @@ interface User {
   account: string;
   role: string;
 }
+
 interface AuthState {
-  user: User|null;
+  user: User | null;
   isAuthenticated: boolean;
-  login: (user:User) => void;
+  token: string | null;
+  login: (user: User, token: string) => void;
   logout: () => void;
+  setUser: (user: User) => void;
+  initializeAuth: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  isAuthenticated: false,
-  login: (user: User) => set({ user, isAuthenticated: true }),
-  logout: () => set({ user: null, isAuthenticated: false }),
-}));
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      isAuthenticated: false,
+      token: null,
+      login: (user: User, token: string) => {
+        // 保存token到localStorage和apiService
+        apiService.setToken(token);
+        set({ user, isAuthenticated: true, token });
+      },
+      logout: () => {
+        // 清除token
+        apiService.clearToken();
+        set({ user: null, isAuthenticated: false, token: null });
+      },
+      setUser: (user: User) => {
+        set({ user });
+      },
+      initializeAuth: () => {
+        // 初始化时检查token
+        const token = apiService.getToken();
+        if (token) {
+          // Token存在，尝试获取当前用户信息
+          apiService.getCurrentUser()
+            .then((userData) => {
+              set({
+                user: {
+                  id: userData.id.toString(),
+                  name: userData.full_name || userData.username,
+                  email: userData.email,
+                  account: userData.username,
+                  role: userData.role,
+                },
+                isAuthenticated: true,
+                token,
+              });
+            })
+            .catch(() => {
+              // Token无效，清除
+              apiService.clearToken();
+              set({ user: null, isAuthenticated: false, token: null });
+            });
+        }
+      },
+    }),
+    {
+      name: 'warehouse-auth',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    }
+  )
+);
 
 // UI Store
 interface UIState {
