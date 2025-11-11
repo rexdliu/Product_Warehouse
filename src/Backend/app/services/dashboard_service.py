@@ -320,6 +320,164 @@ class DashboardService:
         ]
 
     @staticmethod
+    def get_inventory_sales_trend(db: Session, period: str = "weekly", days: int = 30) -> Dict[str, Any]:
+        """
+        获取库存和销售趋势数据
+
+        Args:
+            db: 数据库会话
+            period: 时间周期 (daily, weekly, monthly)
+            days: 统计天数
+
+        Returns:
+            Dict: 包含 labels, inventory_levels, sales_data 的字典
+        """
+        from datetime import datetime, timedelta
+
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+
+        # 根据周期设置分组
+        if period == "daily":
+            # 按天统计最近7天
+            labels = [(end_date - timedelta(days=i)).strftime("%m-%d") for i in range(6, -1, -1)]
+            date_format = "%Y-%m-%d"
+        elif period == "monthly":
+            # 按月统计最近6个月
+            labels = [(end_date - timedelta(days=30*i)).strftime("%Y-%m") for i in range(5, -1, -1)]
+            date_format = "%Y-%m"
+        else:  # weekly
+            # 按周统计最近4周
+            labels = [f"第{i+1}周" for i in range(4)]
+            date_format = None  # 周统计需要特殊处理
+
+        # 获取销售数据
+        sales_query = (
+            db.query(
+                func.date_format(SalesOrder.order_date, '%Y-%m-%d' if period == 'daily' else '%Y-%m').label("period"),
+                func.sum(SalesOrder.total_value).label("total_sales")
+            )
+            .filter(SalesOrder.order_date >= start_date)  # type: ignore[arg-type]
+            .filter(SalesOrder.status != "cancelled")  # type: ignore[arg-type]
+            .group_by("period")
+            .all()
+        )
+
+        # 获取当前库存总量（简化处理，实际应该是历史快照）
+        total_inventory = db.query(func.sum(Inventory.quantity)).scalar() or 0
+
+        # 构建返回数据
+        sales_data = [0.0] * len(labels)
+        sales_dict = {row.period: float(row.total_sales or 0) for row in sales_query}
+
+        # 填充销售数据
+        for i, label in enumerate(labels):
+            if period == "daily":
+                date_key = (end_date - timedelta(days=6-i)).strftime("%Y-%m-%d")
+            else:
+                date_key = label
+            sales_data[i] = sales_dict.get(date_key, 0.0)
+
+        # 库存水平（简化：使用当前总库存，实际应该查历史记录）
+        inventory_levels = [int(total_inventory)] * len(labels)
+
+        return {
+            "labels": labels,
+            "inventory_levels": inventory_levels,
+            "sales_data": sales_data,
+        }
+
+    @staticmethod
+    def get_product_movement(db: Session, period: str = "weekly", days: int = 30) -> Dict[str, Any]:
+        """
+        获取产品动向数据（出入库统计）
+
+        Args:
+            db: 数据库会话
+            period: 时间周期
+            days: 统计天数
+
+        Returns:
+            Dict: 包含 labels 和 movement_data 的字典
+        """
+        from app.models.inventory import InventoryTransaction
+        from datetime import datetime, timedelta
+
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+
+        if period == "daily":
+            labels = [(end_date - timedelta(days=i)).strftime("%m-%d") for i in range(6, -1, -1)]
+        elif period == "monthly":
+            labels = [(end_date - timedelta(days=30*i)).strftime("%Y-%m") for i in range(5, -1, -1)]
+        else:  # weekly
+            labels = [f"第{i+1}周" for i in range(4)]
+
+        # 获取交易统计
+        movements = (
+            db.query(
+                func.date_format(InventoryTransaction.created_at, '%Y-%m-%d' if period == 'daily' else '%Y-%m').label("period"),
+                func.sum(func.abs(InventoryTransaction.quantity)).label("total_movement")
+            )
+            .filter(InventoryTransaction.created_at >= start_date)  # type: ignore[arg-type]
+            .group_by("period")
+            .all()
+        )
+
+        movement_dict = {row.period: int(row.total_movement or 0) for row in movements}
+        movement_data = [0] * len(labels)
+
+        for i, label in enumerate(labels):
+            if period == "daily":
+                date_key = (end_date - timedelta(days=6-i)).strftime("%Y-%m-%d")
+            else:
+                date_key = label
+            movement_data[i] = movement_dict.get(date_key, 0)
+
+        return {
+            "labels": labels,
+            "movement_data": movement_data,
+        }
+
+    @staticmethod
+    def get_category_distribution(db: Session) -> Dict[str, Any]:
+        """
+        获取产品分类分布
+
+        Args:
+            db: 数据库会话
+
+        Returns:
+            Dict: 包含 labels 和 data 的字典
+        """
+        from app.models.product import ProductCategory
+
+        # 获取每个分类的产品数量
+        category_stats = (
+            db.query(
+                ProductCategory.name.label("category_name"),
+                func.count(Product.id).label("product_count")
+            )
+            .join(Product, Product.category_id == ProductCategory.id)
+            .filter(Product.is_active == True)  # type: ignore[arg-type]
+            .group_by(ProductCategory.name)
+            .all()
+        )
+
+        labels = [row.category_name for row in category_stats]
+        data = [int(row.product_count) for row in category_stats]
+
+        # 如果没有数据，返回默认值
+        if not labels:
+            labels = ["暂无分类"]
+            data = [0]
+
+        return {
+            "labels": labels,
+            "data": data,
+        }
+
+    @staticmethod
     def get_full_dashboard(db: Session) -> DashboardResponse:
         """
         获取完整的仪表板数据

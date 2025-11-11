@@ -377,6 +377,38 @@ class ApiService {
     return this.request<OrderStatusDistribution[]>('/api/v1/dashboard/order-status-distribution');
   }
 
+  async getInventorySalesTrend(period: string = 'weekly', days: number = 30): Promise<{
+    labels: string[];
+    inventory_levels: number[];
+    sales_data: number[];
+  }> {
+    return this.request<{
+      labels: string[];
+      inventory_levels: number[];
+      sales_data: number[];
+    }>(`/api/v1/dashboard/inventory-sales-trend?period=${period}&days=${days}`);
+  }
+
+  async getProductMovement(period: string = 'weekly', days: number = 30): Promise<{
+    labels: string[];
+    movement_data: number[];
+  }> {
+    return this.request<{
+      labels: string[];
+      movement_data: number[];
+    }>(`/api/v1/dashboard/product-movement?period=${period}&days=${days}`);
+  }
+
+  async getCategoryDistribution(): Promise<{
+    labels: string[];
+    data: number[];
+  }> {
+    return this.request<{
+      labels: string[];
+      data: number[];
+    }>('/api/v1/dashboard/category-distribution');
+  }
+
   // Auth API 方法
   async login(username: string, password: string): Promise<LoginResponse> {
     const formData = new URLSearchParams();

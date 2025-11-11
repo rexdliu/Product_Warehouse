@@ -4,8 +4,8 @@ Dashboard API 路由
 该模块提供仪表板相关的 API 端点。
 """
 
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException
+from typing import List, Dict, Any
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -166,3 +166,63 @@ def get_order_status_distribution(
         return DashboardService.get_order_status_distribution(db)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取订单状态分布失败: {str(e)}")
+
+
+@router.get("/inventory-sales-trend", response_model=Dict[str, Any])
+def get_inventory_sales_trend(
+    period: str = Query("weekly", regex="^(daily|weekly|monthly)$"),
+    days: int = Query(30, ge=7, le=365),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    获取库存和销售趋势数据
+
+    返回指定时间周期的库存水平和销售数据。
+
+    Args:
+        period: 时间周期 (daily, weekly, monthly)
+        days: 统计天数 (默认30天)
+    """
+    try:
+        return DashboardService.get_inventory_sales_trend(db, period, days)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取趋势数据失败: {str(e)}")
+
+
+@router.get("/product-movement", response_model=Dict[str, Any])
+def get_product_movement(
+    period: str = Query("weekly", regex="^(daily|weekly|monthly)$"),
+    days: int = Query(30, ge=7, le=365),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    获取产品动向数据
+
+    返回指定时间周期的产品出入库统计。
+
+    Args:
+        period: 时间周期 (daily, weekly, monthly)
+        days: 统计天数 (默认30天)
+    """
+    try:
+        return DashboardService.get_product_movement(db, period, days)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取产品动向失败: {str(e)}")
+
+
+@router.get("/category-distribution", response_model=Dict[str, Any])
+def get_category_distribution(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    获取产品分类分布
+
+    返回各个分类的产品数量分布。
+    """
+    try:
+        return DashboardService.get_category_distribution(db)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取分类分布失败: {str(e)}")
