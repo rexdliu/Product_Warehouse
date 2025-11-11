@@ -46,7 +46,14 @@ export interface SalesOrder {
   quantity: number;
   totalValue: number;
   orderDate: string;
+  status: string;
+  warehouseId?: number;
+  deliveryDate?: string;
+  completedAt?: string;
+  userId?: number;
+  notes?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface RAGQueryResponse {
@@ -100,7 +107,14 @@ interface SalesOrderDTO {
   quantity: number;
   total_value: number;
   order_date: string;
+  status: string;
+  warehouse_id?: number;
+  delivery_date?: string;
+  completed_at?: string;
+  user_id?: number;
+  notes?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 interface ProductCategoryDTO {
@@ -323,7 +337,14 @@ class ApiService {
       quantity: item.quantity,
       totalValue: item.total_value,
       orderDate: item.order_date,
+      status: item.status,
+      warehouseId: item.warehouse_id,
+      deliveryDate: item.delivery_date,
+      completedAt: item.completed_at,
+      userId: item.user_id,
+      notes: item.notes,
       createdAt: item.created_at,
+      updatedAt: item.updated_at,
     }));
   }
 
@@ -441,6 +462,85 @@ class ApiService {
 
   logout() {
     this.clearToken();
+  }
+
+  // Order Management methods
+  async updateOrderStatus(orderId: number, status: string, notes?: string): Promise<SalesOrder> {
+    const data = await this.request<SalesOrderDTO>(`/api/v1/sales/orders/${orderId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, notes }),
+    });
+    return {
+      id: data.id,
+      orderCode: data.order_code,
+      distributorId: data.distributor_id,
+      productId: data.product_id,
+      productName: data.product_name,
+      quantity: data.quantity,
+      totalValue: data.total_value,
+      orderDate: data.order_date,
+      status: data.status,
+      warehouseId: data.warehouse_id,
+      deliveryDate: data.delivery_date,
+      completedAt: data.completed_at,
+      userId: data.user_id,
+      notes: data.notes,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    };
+  }
+
+  async updateOrder(orderId: number, updates: Partial<SalesOrder>): Promise<SalesOrder> {
+    const requestBody: Record<string, any> = {};
+    if (updates.quantity !== undefined) requestBody.quantity = updates.quantity;
+    if (updates.totalValue !== undefined) requestBody.total_value = updates.totalValue;
+    if (updates.status !== undefined) requestBody.status = updates.status;
+    if (updates.warehouseId !== undefined) requestBody.warehouse_id = updates.warehouseId;
+    if (updates.deliveryDate !== undefined) requestBody.delivery_date = updates.deliveryDate;
+    if (updates.notes !== undefined) requestBody.notes = updates.notes;
+
+    const data = await this.request<SalesOrderDTO>(`/api/v1/sales/orders/${orderId}`, {
+      method: 'PUT',
+      body: JSON.stringify(requestBody),
+    });
+    return {
+      id: data.id,
+      orderCode: data.order_code,
+      distributorId: data.distributor_id,
+      productId: data.product_id,
+      productName: data.product_name,
+      quantity: data.quantity,
+      totalValue: data.total_value,
+      orderDate: data.order_date,
+      status: data.status,
+      warehouseId: data.warehouse_id,
+      deliveryDate: data.delivery_date,
+      completedAt: data.completed_at,
+      userId: data.user_id,
+      notes: data.notes,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    };
+  }
+
+  // Inventory Management methods
+  async updateInventoryQuantity(inventoryId: number, quantity: number): Promise<InventoryItem> {
+    const data = await this.request<InventoryDTO>(`/api/v1/inventory/items/${inventoryId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ quantity }),
+    });
+    return {
+      id: data.id,
+      productId: data.product_id,
+      warehouseId: data.warehouse_id,
+      quantity: data.quantity,
+      reservedQuantity: data.reserved_quantity,
+      updatedAt: data.updated_at,
+    };
+  }
+
+  async getWarehouses(): Promise<Array<{id: number, name: string, location?: string}>> {
+    return this.request<Array<{id: number, name: string, location?: string}>>('/api/v1/inventory/warehouses');
   }
 }
 

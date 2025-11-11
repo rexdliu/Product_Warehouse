@@ -26,6 +26,8 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import OrderManagement from "./pages/OrderManagement";
+import InventoryManagement from "./pages/InventoryManagement";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -48,6 +50,8 @@ const App = () => (
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/inventory" element={<Inventory />} />
+                    <Route path="/orders" element={<OrderManagement />} />
+                    <Route path="/inventory-management" element={<InventoryManagement />} />
                     <Route path="/analytics" element={<Analytics />} />
                     <Route path="/warehouse" element={<WarehouseMap />} />
                     <Route path="/reports" element={<Reports />} />
