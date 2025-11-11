@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS products (
     category_id INT,
     price DECIMAL(12, 2) NOT NULL,
     cost DECIMAL(12, 2),
+    image_url VARCHAR(255) COMMENT '产品图片URL',
     unit VARCHAR(20) DEFAULT 'pcs' COMMENT '单位: pcs/box/liter',
     min_stock_level INT DEFAULT 10 COMMENT '最低库存预警线',
     is_active BOOLEAN DEFAULT TRUE,
