@@ -366,6 +366,9 @@ INSERT INTO activity_logs (activity_type, action, item_name, user_id, reference_
 ('alert', '低库存警报', '燃油滤清器 - 昆明分仓库', 1, 9, 'product', '2024-11-08 08:00:00'),
 ('alert', '缺货警报', '空气滤清器 - 昆明分仓库', 1, 10, 'product', '2024-11-09 08:00:00');
 
+--*
+ALTER TABLE products ADD COLUMN image_url VARCHAR(255)
+--
 -- =============================================
 -- 完成提示
 -- =============================================
