@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS warehouses (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='仓库表';
 
 -- 5. 库存表
-CREATE TABLE IF NOT EXISTS inventory (
+CREATE TABLE IF NOT EXISTS inventories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
     warehouse_id INT NOT NULL,
