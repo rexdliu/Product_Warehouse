@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Warehouse, RefreshCw, Filter, AlertTriangle, Package } from 'lucide-react';
+import { CreateProductDialog } from '@/components/products/CreateProductDialog';
 
 interface InventoryWithDetails extends InventoryItem {
   productName?: string;
@@ -164,10 +165,13 @@ const InventoryManagement: React.FC = () => {
           <Warehouse className="h-8 w-8" />
           库存管理
         </h1>
-        <Button onClick={loadData} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          刷新
-        </Button>
+        <div className="flex items-center gap-2">
+          <CreateProductDialog />
+          <Button onClick={loadData} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            刷新
+          </Button>
+        </div>
       </div>
 
       {/* 警报卡片 */}

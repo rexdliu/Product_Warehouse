@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { Package, RefreshCw, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import { CreateOrderDialog } from '@/components/orders/CreateOrderDialog';
 
 const ORDER_STATUSES = [
   { value: 'pending', label: '待处理', color: 'bg-yellow-500' },
@@ -123,10 +124,13 @@ const OrderManagement: React.FC = () => {
           <Package className="h-8 w-8" />
           订单管理
         </h1>
-        <Button onClick={loadOrders} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          刷新
-        </Button>
+        <div className="flex items-center gap-2">
+          <CreateOrderDialog />
+          <Button onClick={loadOrders} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            刷新
+          </Button>
+        </div>
       </div>
 
       <Card>
