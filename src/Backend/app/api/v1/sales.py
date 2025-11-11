@@ -1,7 +1,8 @@
 """销售相关 API"""
 
 from typing import Iterable, List, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.crud import sales as sales_crud
@@ -14,6 +15,9 @@ from app.schemas.sales import (
     SalesOrderUpdate,
 )
 from app.models.sales import Distributor, SalesOrder
+from app.models.product import Product
+from app.api.deps import require_manager_or_above
+from app.models.user import User
 
 router = APIRouter()
 
@@ -78,11 +82,48 @@ def list_sales_orders(
 def create_sales_order(
     order_in: SalesOrderCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_manager_or_above)
 ) -> SalesOrderInDB:
-    existing = sales_crud.sales_order.get_by_code(db, order_code=order_in.order_code)
-    if existing:
-        raise HTTPException(status_code=400, detail="Order code already exists")
-    order = sales_crud.sales_order.create(db, obj_in=order_in)
+    """
+    创建新订单
+
+    需要 Manager/Admin/Tester 权限
+    自动生成订单号格式: SO-YYYYMMDD-XXXX
+    """
+    # 验证经销商存在
+    distributor = sales_crud.distributor.get(db, id=order_in.distributor_id)
+    if not distributor:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"经销商 ID {order_in.distributor_id} 不存在"
+        )
+
+    # 验证产品存在
+    product = db.query(Product).filter(Product.id == order_in.product_id).first()
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"产品 ID {order_in.product_id} 不存在"
+        )
+
+    # 生成订单号: SO-YYYYMMDD-XXXX
+    today_str = datetime.now().strftime("%Y%m%d")
+    last_order = db.query(SalesOrder).filter(
+        SalesOrder.order_code.like(f"SO{today_str}%")
+    ).order_by(SalesOrder.id.desc()).first()
+
+    if last_order:
+        last_num = int(last_order.order_code[-4:])
+        order_code = f"SO{today_str}{(last_num + 1):04d}"
+    else:
+        order_code = f"SO{today_str}1001"
+
+    # 创建订单（使用生成的订单号）
+    order_data = order_in.model_dump()
+    order_data["order_code"] = order_code
+    order_data["user_id"] = current_user.id
+
+    order = sales_crud.sales_order.create(db, obj_in=order_data)
     return SalesOrderInDB.model_validate(order)
 
 

@@ -26,7 +26,9 @@ class User(Base):
     phone = Column(String)
     full_name = Column(String)  # 全名
     hashed_password = Column(String, nullable=False)
-    role = Column(String, default="staff")  # staff, manager, admin
+    role = Column(String, default="staff")  # staff, manager, admin, tester
+    avatar_url = Column(String)  # 用户头像URL
+    language = Column(String, default="zh-CN")  # 用户界面语言
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
