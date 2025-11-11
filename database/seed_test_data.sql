@@ -5,13 +5,13 @@
 
 -- 注意：密码已使用 bcrypt 加密
 -- 原始密码: admin123, manager123, staff123
--- 这里使用的是明文，实际使用时需要通过应用程序加密
 
 -- 1. 插入用户数据
 INSERT INTO users (username, email, phone, full_name, hashed_password, role, is_superuser) VALUES
-('admin', 'admin@warehouse.com', '13800138000', '系统管理员', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYIW.hlO3CO', 'admin', TRUE),
-('manager', 'manager@warehouse.com', '13800138001', '仓库经理', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYIW.hlO3CO', 'manager', FALSE),
-('staff', 'staff@warehouse.com', '13800138002', '仓库员工', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYIW.hlO3CO', 'staff', FALSE);
+('admin', 'admin@warehouse.com', '13800138000', '系统管理员', '$2b$12$iHFJxjm8P8uJDyRn9bhJIOOtb/3rxZPiStyQ9crREhC14xHEQV94q', 'admin', TRUE),
+('manager', 'manager@warehouse.com', '13800138001', '仓库经理', '$2b$12$dIMLWxtI1Q7SwlaXATnNHustGNkrJQRz/5DP3oZ9BEKPmTWkoriN2', 'manager', FALSE),
+('staff', 'staff@warehouse.com', '13800138002', '仓库员工', '$2b$12$ujCph6NyyPX8E/cemoA6hugnJOLarI4QwCrYkXuMmHgm6MNfbHMHG', 'staff', FALSE),
+('rextest', 'rex@test.com', '13900001111', 'Rex 测试账号', '$2b$12$fnVPPQVGketfmYBlHkT1z.coivQhDbZ1QeqJqQEX.UZHg.lkmaLbq', 'admin', TRUE);
 
 -- 2. 插入产品分类
 INSERT INTO product_categories (name, code, description) VALUES
