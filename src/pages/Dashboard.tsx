@@ -137,28 +137,24 @@ const Dashboard: React.FC = () => {
         <MetricsCard
           title="产品总数"
           value={totalProductsValue}
-          change={{ value: '12%', type: 'increase' }}
           icon={Package}
           variant="default"
         />
         <MetricsCard
           title="低库存警报"
           value={lowStockValue}
-          change={{ value: '3', type: 'decrease' }}
           icon={AlertTriangle}
           variant="warning"
         />
         <MetricsCard
           title="待处理订单"
           value={pendingOrdersValue}
-          change={{ value: '8%', type: 'increase' }}
           icon={ShoppingCart}
           variant="default"
         />
         <MetricsCard
           title="仓库容量使用率"
           value={capacityValue}
-          change={{ value: '5%', type: 'increase' }}
           icon={Warehouse}
           variant={warehouseCapacity > 90 ? 'error' : warehouseCapacity > 75 ? 'warning' : 'success'}
         />
