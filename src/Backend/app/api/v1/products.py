@@ -106,7 +106,7 @@ def create_product(
 
     # 自动创建库存记录
     inventory_data = InventoryCreate(
-        product_id=product.id,
+        product_id=product.id,# type: ignore[arg-type]
         warehouse_id=product_in.warehouse_id,
         quantity=product_in.initial_quantity,
         reserved_quantity=0,
