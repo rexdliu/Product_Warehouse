@@ -53,8 +53,8 @@ def send_notification(
                 title=title,
                 message=message,
                 notification_type=notification_type,
-                reference_id=reference_id,
-                reference_type=reference_type
+                reference_id=reference_id,# type: ignore[arg-type]
+                reference_type=reference_type# type: ignore[arg-type]
             )
 
         # 尝试在事件循环中运行
