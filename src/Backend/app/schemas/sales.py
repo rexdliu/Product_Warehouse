@@ -39,8 +39,26 @@ class SalesOrderBase(BaseModel):
     order_date: datetime
 
 
+class SalesOrderCreateRequest(BaseModel):
+    """创建订单的请求模型 - 不包含系统生成的字段"""
+    distributor_id: int
+    product_id: int
+    product_name: str
+    quantity: int
+    unit_price: float
+    total_value: float
+    warehouse_id: Optional[int] = None
+    delivery_date: Optional[datetime] = None
+    notes: Optional[str] = None
+
+
 class SalesOrderCreate(SalesOrderBase):
-    pass
+    """完整的订单创建模型 - 包含所有必填字段"""
+    unit_price: float
+    warehouse_id: Optional[int] = None
+    delivery_date: Optional[datetime] = None
+    user_id: Optional[int] = None
+    notes: Optional[str] = None
 
 
 class SalesOrderUpdate(BaseModel):

@@ -10,6 +10,7 @@ from app.schemas.sales import (
     DistributorCreate,
     DistributorInDB,
     DistributorUpdate,
+    SalesOrderCreateRequest,
     SalesOrderCreate,
     SalesOrderInDB,
     SalesOrderUpdate,
@@ -80,7 +81,7 @@ def list_sales_orders(
 
 @router.post("/orders", response_model=SalesOrderInDB, status_code=201)
 def create_sales_order(
-    order_in: SalesOrderCreate,
+    order_in: SalesOrderCreateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_manager_or_above)
 ) -> SalesOrderInDB:
@@ -118,13 +119,22 @@ def create_sales_order(
     else:
         order_code = f"SO{today_str}1001"
 
-    # 创建订单（使用生成的订单号）
-    order_data = order_in.model_dump()
-    order_data["order_code"] = order_code
-    order_data["user_id"] = current_user.id
+    # 构建完整的订单数据
+    order_create = SalesOrderCreate(
+        order_code=order_code,
+        distributor_id=order_in.distributor_id,
+        product_id=order_in.product_id,
+        product_name=order_in.product_name,
+        quantity=order_in.quantity,
+        unit_price=order_in.unit_price,
+        total_value=order_in.total_value,
+        order_date=datetime.now(),
+        warehouse_id=order_in.warehouse_id,
+        delivery_date=order_in.delivery_date,
+        user_id=current_user.id,
+        notes=order_in.notes
+    )
 
-    # 创建 SalesOrderCreate 对象
-    order_create = SalesOrderCreate(**order_data)
     order = sales_crud.sales_order.create(db, obj_in=order_create)
     return SalesOrderInDB.model_validate(order)
 
