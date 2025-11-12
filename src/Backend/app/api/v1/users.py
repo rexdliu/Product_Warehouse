@@ -210,10 +210,12 @@ def delete_avatar(
     删除用户的自定义头像，恢复使用默认头像
     """
     # 如果用户有自定义头像，删除文件
-    if current_user.avatar_url and current_user.avatar_url.startswith("/static/avatars/"):        try: # type: ignore[arg-type]
+    avatar_url = current_user.avatar_url
+    if avatar_url is not None and str(avatar_url).startswith("/static/avatars/"):
+        try:
             # 获取文件路径
             avatars_dir = Path(__file__).parent.parent.parent / "static" / "avatars"
-            filename = current_user.avatar_url.split("/")[-1]
+            filename = str(avatar_url).split("/")[-1]
             filepath = avatars_dir / filename
 
             # 删除文件
