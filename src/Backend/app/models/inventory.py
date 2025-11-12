@@ -48,7 +48,8 @@ class Inventory(Base):
     quantity = Column(Integer, default=0)
     reserved_quantity = Column(Integer, default=0)  # 预留数量
     location_code = Column(String)  # 货位编号，如 "A-01-03"
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # 关系
     product = relationship("Product")
