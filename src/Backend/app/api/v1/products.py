@@ -172,7 +172,7 @@ def delete_product(
         )
 
     # 软删除：设置 is_active = False
-    product.is_active = False
+    product.is_active = False  # type: ignore[assignment]
     db.add(product)
     db.commit()
     db.refresh(product)

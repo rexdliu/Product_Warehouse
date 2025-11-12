@@ -66,7 +66,7 @@ class ProductBase(BaseModel):
 # 创建产品模型
 class ProductCreate(ProductBase):
     """创建产品模型"""
-    category_id: int = Field(..., gt=0, description="产品分类ID（必填）")
+    category_id: int = Field(..., gt=0, description="产品分类ID（必填）")  # type: ignore[assignment]
 
 # 更新产品模型
 class ProductUpdate(BaseModel):

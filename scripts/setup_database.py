@@ -7,9 +7,10 @@
 import pymysql
 import sys
 from pathlib import Path
+from typing import Any
 
 # 数据库连接配置
-DB_CONFIG = {
+DB_CONFIG: dict[str, Any] = {
     'host': 'rm-cn-nwy3uyzdy0008j5o.rwlb.rds.aliyuncs.com',
     'user': 'rex',
     'password': 'Liudx_2017',
