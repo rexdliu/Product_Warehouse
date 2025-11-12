@@ -23,6 +23,7 @@ from app.models import user as user_models  # noqa: F401
 from app.models import product as product_models  # noqa: F401
 from app.models import inventory as inventory_models  # noqa: F401
 from app.models import sales as sales_models  # noqa: F401
+from app.models import notification as notification_models  # noqa: F401
 import os
 
 app = FastAPI(
@@ -86,8 +87,23 @@ def on_startup() -> None:
     """应用启动时初始化数据库表（本地开发）。
 
     未连接外部数据库时，使用 SQLite 自动建表，方便前端联调。
+    同时启动后台任务调度器。
     """
     Base.metadata.create_all(bind=engine)
+
+    # 启动后台任务调度器
+    from app.core.scheduler import start_scheduler
+    start_scheduler()
+
+
+@app.on_event("shutdown")
+def on_shutdown() -> None:
+    """应用关闭时清理资源。
+
+    关闭后台任务调度器。
+    """
+    from app.core.scheduler import shutdown_scheduler
+    shutdown_scheduler()
 
 if __name__ == "__main__":
     import uvicorn

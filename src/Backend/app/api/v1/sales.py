@@ -20,6 +20,7 @@ from app.models.product import Product
 from app.api.deps import require_manager_or_above
 from app.models.user import User
 from app.utils.activity import log_activity
+from app.utils.notification import send_notification_to_managers, send_notification
 
 router = APIRouter()
 
@@ -149,6 +150,16 @@ def create_sales_order(
         reference_type="order"
     )
 
+    # 发送通知给所有管理员
+    send_notification_to_managers(
+        db=db,
+        title="新订单创建",
+        message=f"{current_user.username} 创建了新订单 {order.order_code}，产品：{order_in.product_name}，数量：{order_in.quantity}",  # type: ignore[arg-type]
+        notification_type="order",
+        reference_id=int(order.id),  # type: ignore[arg-type]
+        reference_type="order"
+    )
+
     db.commit()
     db.refresh(order)
     return SalesOrderInDB.model_validate(order)
@@ -172,6 +183,9 @@ def update_sales_order(
 
     # 记录活动日志
     action = "更新订单"
+    status_changed = False
+    status_text = ""
+
     if order_in.status and order_in.status != old_status:
         status_map = {
             "pending": "待处理",
@@ -180,7 +194,9 @@ def update_sales_order(
             "completed": "已完成",
             "cancelled": "已取消"
         }
-        action = f"订单状态变更为{status_map.get(order_in.status, order_in.status)}"
+        status_text = status_map.get(order_in.status, order_in.status)
+        action = f"订单状态变更为{status_text}"
+        status_changed = True
 
     log_activity(
         db=db,
@@ -191,6 +207,18 @@ def update_sales_order(
         reference_id=int(order.id),  # type: ignore[arg-type]
         reference_type="order"
     )
+
+    # 如果订单状态发生变化，通知订单创建者
+    if status_changed and order.user_id and order.user_id != current_user.id:  # type: ignore[comparison-overlap]
+        send_notification(
+            db=db,
+            user_id=int(order.user_id),  # type: ignore[arg-type]
+            title="订单状态更新",
+            message=f"您的订单 {order.order_code} 状态已更新为：{status_text}",  # type: ignore[arg-type]
+            notification_type="order",
+            reference_id=int(order.id),  # type: ignore[arg-type]
+            reference_type="order"
+        )
 
     db.commit()
     db.refresh(order)

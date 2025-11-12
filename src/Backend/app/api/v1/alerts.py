@@ -8,6 +8,7 @@ from app.core.database import get_db
 from app.models.inventory import Inventory, Warehouse
 from app.models.product import Product
 from app.utils.activity import log_activity
+from app.utils.notification import send_notification_to_managers
 from pydantic import BaseModel
 
 
@@ -72,6 +73,15 @@ def check_low_stock_and_alert(
                 reference_id=product.id,
                 reference_type="product"
             )
+            # 发送缺货通知给管理员
+            send_notification_to_managers(
+                db=db,
+                title="缺货警报",
+                message=f"{product.name} 在 {warehouse.name} 已缺货，请尽快补货",
+                notification_type="alert",
+                reference_id=product.id,
+                reference_type="product"
+            )
         else:
             action = "低库存警报"
             log_activity(
@@ -80,6 +90,15 @@ def check_low_stock_and_alert(
                 action=action,
                 item_name=item_name,
                 user_id=None,
+                reference_id=product.id,
+                reference_type="product"
+            )
+            # 发送低库存通知给管理员
+            send_notification_to_managers(
+                db=db,
+                title="低库存警报",
+                message=f"{product.name} 在 {warehouse.name} 库存不足（当前：{inventory.quantity}，最低：{product.min_stock_level}），缺货 {shortage} 件",
+                notification_type="alert",
                 reference_id=product.id,
                 reference_type="product"
             )

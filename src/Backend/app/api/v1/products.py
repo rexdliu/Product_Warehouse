@@ -13,6 +13,7 @@ from app.schemas.product import (
 from app.schemas.inventory import InventoryCreate
 from app.crud.inventory import inventory as inventory_repo, warehouse as warehouse_repo
 from app.utils.activity import log_activity
+from app.utils.notification import send_notification_to_managers
 from app.api.deps import (
     get_current_active_user,
     require_manager_or_above,
@@ -136,6 +137,16 @@ def create_product(
             reference_id=int(product.id),  # type: ignore[arg-type]
             reference_type="product"
         )
+
+    # 发送通知给所有管理员
+    send_notification_to_managers(
+        db=db,
+        title="新产品创建",
+        message=f"{current_user.username} 创建了新产品：{product.name}（{product.sku}），初始库存：{product_in.initial_quantity}",  # type: ignore[arg-type]
+        notification_type="product",
+        reference_id=int(product.id),  # type: ignore[arg-type]
+        reference_type="product"
+    )
 
     db.commit()
     db.refresh(product)
