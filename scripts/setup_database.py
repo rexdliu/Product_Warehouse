@@ -13,7 +13,7 @@ from typing import Any
 DB_CONFIG: dict[str, Any] = {
     'host': 'rm-cn-nwy3uyzdy0008j5o.rwlb.rds.aliyuncs.com',
     'user': 'rex',
-    'password': 'Liudx_2017',
+    'password': 'Liuyerong720!',
     'database': 'warehouse_test_data',
     'charset': 'utf8mb4'
 }
