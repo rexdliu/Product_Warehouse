@@ -4,7 +4,8 @@ import {
   Link2, Package, Moon, Sun, Monitor, Smartphone,
   Mail, MessageSquare, Zap, Key, Download,
   Upload, Globe, Wifi, WifiOff, Check, ChevronRight,
-  Building2, MapPin, BarChart3, Lock, Sparkles
+  Building2, MapPin, BarChart3, Lock, Sparkles, Loader2,
+  AlertCircle, X, Trash2
 } from 'lucide-react';
 import {
   Card,
@@ -35,23 +36,59 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import {useUIStore} from "@/stores";
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {useUIStore, useAuthStore} from "@/stores";
+import { apiService, UserResponse, WarehouseConfig as WarehouseConfigType } from '@/services/api';
 
 const Settings = () => {
-   const { 
-    theme: globalTheme, 
-    setTheme: setGlobalTheme, 
-    sidebarOpen, 
-    toggleSidebar, 
-    aiSettings, 
-    setAISettings 
+  const {
+    theme: globalTheme,
+    setTheme: setGlobalTheme,
+    sidebarOpen,
+    toggleSidebar,
+    aiSettings,
+    setAISettings
   } = useUIStore();
-  
+
+  const { user: authUser } = useAuthStore();
+
+  // 加载状态
+  const [loading, setLoading] = useState<boolean>(true);
+  const [saving, setSaving] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // 用户数据
+  const [userData, setUserData] = useState<UserResponse | null>(null);
+  const [profileForm, setProfileForm] = useState({
+    username: '',
+    email: '',
+    phone: '',
+    full_name: '',
+    language: 'zh-CN'
+  });
+
+  // 仓库配置
+  const [warehouseConfig, setWarehouseConfig] = useState<WarehouseConfigType | null>(null);
+  const [warehouseForm, setWarehouseForm] = useState({
+    warehouse_name: '',
+    location: '',
+    timezone: 'Asia/Shanghai',
+    temperature_unit: 'celsius',
+    low_stock_threshold: 10
+  });
+
+  // 密码修改
+  const [passwordForm, setPasswordForm] = useState({
+    current_password: '',
+    new_password: '',
+    confirm_password: ''
+  });
+
   // 保持本地状态，但确保与全局状态同步
   const [theme, setTheme] = useState<'system' | 'light' | 'dark'>(
     globalTheme
   );
-  
+
   interface Notifications {
     email: boolean;
     push: boolean;
@@ -60,19 +97,8 @@ const Settings = () => {
     orderUpdates: boolean;
     systemAlerts: boolean;
   }
-  interface SettingsData {
-    theme: 'system' | 'light' | 'dark';
-    notifications: Notifications;
-    aiSettings: typeof aiSettings;
-    lowStockThreshold: number;
-    autoReorder: boolean;
-    avatarUrl: string;
-    showAnimations: boolean;
-    compactSidebar: boolean;
-    showTooltips: boolean;
-  }
 
-  // 通知
+  // 通知设置（暂时本地存储）
   const [notifications, setNotifications] = useState<Notifications>({
     email: true,
     push: true,
@@ -81,31 +107,84 @@ const Settings = () => {
     orderUpdates: true,
     systemAlerts: true,
   });
-  // 同步状态
-  const [syncStatus, setSyncStatus] = useState<'connected' | 'disconnected'>('connected');
-  // 库存告警阈值（滑块展示联动）
-  const [lowStockThreshold, setLowStockThreshold] = useState<number>(20);
-  const [autoReorder, setAutoReorder] = useState<boolean>(false);
-  // 头像上传预览
-  const [avatarUrl, setAvatarUrl] = useState<string>('https://github.com/shadcn.png');
-  // 保存成功提示
- // 界面选项
-const [showAnimations, setShowAnimations] = useState<boolean>(true);
-  
+
+  // 头像上传
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
+  const [uploadingAvatar, setUploadingAvatar] = useState<boolean>(false);
+
+  // 界面选项
+  const [showAnimations, setShowAnimations] = useState<boolean>(true);
   const [compactSidebar, setCompactSidebar] = useState<boolean>(false);
-  
   const [showTooltips, setShowTooltips] = useState<boolean>(true);
-  // 保存/取消提示
-  const [toast, setToast] = useState<{ visible: boolean; message: string }>({ visible: false, message: '' });
-  const [savedSettings, setSavedSettings] = useState<SettingsData | null>(null);
-  // 主题切换副作用：将 dark 类应用到 html 上；System 模式监听 OS 变化
+
+  // Toast通知
+  const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({
+    visible: false,
+    message: '',
+    type: 'success'
+  });
+
+  // 显示Toast
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ visible: true, message, type });
+    setTimeout(() => setToast({ visible: false, message: '', type: 'success' }), 3000);
+  };
+
+  // 初始加载数据
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // 并行加载用户数据和仓库配置
+        const [userRes, warehouseRes] = await Promise.all([
+          apiService.getCurrentUser(),
+          apiService.getWarehouseConfig().catch(() => null) // 仓库配置可能不存在
+        ]);
+
+        // 设置用户数据
+        setUserData(userRes);
+        setProfileForm({
+          username: userRes.username,
+          email: userRes.email,
+          phone: userRes.phone || '',
+          full_name: userRes.full_name || '',
+          language: userRes.language || 'zh-CN'
+        });
+        setAvatarUrl(userRes.avatar_url || '');
+
+        // 设置仓库配置
+        if (warehouseRes) {
+          setWarehouseConfig(warehouseRes);
+          setWarehouseForm({
+            warehouse_name: warehouseRes.warehouse_name,
+            location: warehouseRes.location,
+            timezone: warehouseRes.timezone,
+            temperature_unit: warehouseRes.temperature_unit,
+            low_stock_threshold: warehouseRes.low_stock_threshold
+          });
+        }
+
+      } catch (err) {
+        console.error('加载设置失败:', err);
+        setError(err instanceof Error ? err.message : '加载设置失败');
+        showToast('加载设置失败，请刷新重试', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // 主题切换副作用
   useEffect(() => {
     const root = document.documentElement;
     const apply = (mode: 'light' | 'dark') => {
       if (mode === 'dark') root.classList.add('dark');
       else root.classList.remove('dark');
     };
-
 
     if (theme === 'system') {
       const mql = window.matchMedia('(prefers-color-scheme: dark)');
@@ -117,31 +196,11 @@ const [showAnimations, setShowAnimations] = useState<boolean>(true);
       apply(theme);
     }
   }, [theme]);
-  
-  // 当全局主题变化时（例如通过persist中间件恢复），更新本地状态
+
+  // 当全局主题变化时，更新本地状态
   useEffect(() => {
     setTheme(globalTheme);
   }, [globalTheme]);
-  
-  // Auto-save settings when they change
-useEffect(() => {
-  const timer = setTimeout(() => {
-    const currentSettings = {
-      theme,
-      notifications,
-      aiSettings,
-      lowStockThreshold,
-      autoReorder,
-      avatarUrl,
-      showAnimations,
-      compactSidebar,
-      showTooltips,
-    };
-    setSavedSettings(currentSettings);
-  }, 500); // 500ms debounce
-
-  return () => clearTimeout(timer);
-}, [theme, notifications, aiSettings, lowStockThreshold, autoReorder, avatarUrl, showAnimations, compactSidebar, showTooltips]);
 
   useEffect(() => {
     document.body.classList.toggle('no-animations', !showAnimations);
@@ -155,65 +214,193 @@ useEffect(() => {
     if (compactSidebar !== !sidebarOpen) toggleSidebar();
   }, [compactSidebar, sidebarOpen, toggleSidebar]);
 
+  // 处理通知切换
   const handleNotificationToggle = (key: keyof typeof notifications) => {
     setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // 处理AI设置切换
   const handleAIToggle = (key: keyof typeof aiSettings) => {
     const newSettings = { ...aiSettings, [key]: !aiSettings[key] };
     setAISettings(newSettings);
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 处理头像上传
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // 简单大小限制示例（5MB）
-    if (file.size > 5 * 1024 * 1024) {
-      alert('图片大小不能超过 5MB');
+
+    // 文件大小限制（2MB）
+    if (file.size > 2 * 1024 * 1024) {
+      showToast('图片大小不能超过 2MB', 'error');
       return;
     }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+
+    // 文件类型检查
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      showToast('仅支持 JPG, PNG, WEBP 格式', 'error');
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+      const result = await apiService.uploadAvatar(file);
+      setAvatarUrl(result.avatar_url);
+
+      // 更新userData
+      if (userData) {
+        setUserData({ ...userData, avatar_url: result.avatar_url });
+      }
+
+      showToast('头像上传成功', 'success');
+    } catch (err) {
+      console.error('上传头像失败:', err);
+      showToast(err instanceof Error ? err.message : '上传头像失败', 'error');
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
-  const handleSave = () => {
-    // 此处可提交设置到后端
-    const data: SettingsData = {
-      theme,
-      notifications,
-      aiSettings,
-      lowStockThreshold,
-      autoReorder,
-      avatarUrl,
-      showAnimations,
-      compactSidebar,
-      showTooltips,
-    };
-    setSavedSettings(data);
+
+  // 处理头像删除
+  const handleDeleteAvatar = async () => {
+    try {
+      setUploadingAvatar(true);
+      await apiService.deleteAvatar();
+      setAvatarUrl('');
+
+      // 更新userData
+      if (userData) {
+        setUserData({ ...userData, avatar_url: null });
+      }
+
+      showToast('头像已删除', 'success');
+    } catch (err) {
+      console.error('删除头像失败:', err);
+      showToast(err instanceof Error ? err.message : '删除头像失败', 'error');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  // 保存个人资料
+  const handleSaveProfile = async () => {
+    try {
+      setSaving(true);
+      const updatedUser = await apiService.updateUserProfile(profileForm);
+      setUserData(updatedUser);
+      showToast('个人资料已保存', 'success');
+    } catch (err) {
+      console.error('保存失败:', err);
+      showToast(err instanceof Error ? err.message : '保存个人资料失败', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // 保存仓库配置
+  const handleSaveWarehouse = async () => {
+    if (!userData || !['admin', 'manager', 'tester'].includes(userData.role)) {
+      showToast('您没有权限修改仓库配置', 'error');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const updatedConfig = await apiService.updateWarehouseConfig(warehouseForm);
+      setWarehouseConfig(updatedConfig);
+      showToast('仓库配置已保存', 'success');
+    } catch (err) {
+      console.error('保存失败:', err);
+      showToast(err instanceof Error ? err.message : '保存仓库配置失败', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // 修改密码
+  const handleChangePassword = async () => {
+    if (passwordForm.new_password !== passwordForm.confirm_password) {
+      showToast('两次输入的新密码不一致', 'error');
+      return;
+    }
+
+    if (passwordForm.new_password.length < 8) {
+      showToast('新密码长度至少8位', 'error');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await apiService.changePassword({
+        current_password: passwordForm.current_password,
+        new_password: passwordForm.new_password
+      });
+
+      setPasswordForm({
+        current_password: '',
+        new_password: '',
+        confirm_password: ''
+      });
+
+      showToast('密码修改成功', 'success');
+    } catch (err) {
+      console.error('修改密码失败:', err);
+      showToast(err instanceof Error ? err.message : '修改密码失败', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // 保存外观设置
+  const handleSaveAppearance = () => {
     const desiredTheme = theme === 'system'
       ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
       : theme;
     setGlobalTheme(desiredTheme);
-    setToast({ visible: true, message: '设置已保存' });
-    setTimeout(() => setToast({ visible: false, message: '' }), 2000);
+    showToast('外观设置已保存', 'success');
   };
 
-  const handleCancel = () => {
-    if (savedSettings) {
-      setTheme(savedSettings.theme);
-      setNotifications(savedSettings.notifications);
-      setLowStockThreshold(savedSettings.lowStockThreshold);
-      setAutoReorder(savedSettings.autoReorder);
-      setAvatarUrl(savedSettings.avatarUrl);
-      setShowAnimations(savedSettings.showAnimations);
-      setCompactSidebar(savedSettings.compactSidebar);
-      setShowTooltips(savedSettings.showTooltips);
+  // 获取用户头像URL或默认头像
+  const getAvatarUrl = () => {
+    if (avatarUrl) {
+      return avatarUrl;
     }
-    setToast({ visible: true, message: '已放弃更改并恢复到上次保存' });
-    setTimeout(() => setToast({ visible: false, message: '' }), 2000);
+    // 返回默认头像SVG endpoint
+    return '/api/v1/users/me/avatar/default';
   };
+
+  // 获取用户角色显示文本
+  const getRoleText = (role: string) => {
+    const roleMap: Record<string, string> = {
+      admin: '管理员',
+      manager: '仓库经理',
+      staff: '员工',
+      tester: '测试员'
+    };
+    return roleMap[role] || role;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">加载设置中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !userData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6 flex items-center justify-center">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
@@ -229,19 +416,15 @@ useEffect(() => {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={syncStatus === 'connected' ? 'default' : 'destructive'} className="gap-1">
-              {syncStatus === 'connected' ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-              {syncStatus === 'connected' ? '已同步' : '离线'}
+            <Badge variant="default" className="gap-1">
+              <Wifi className="w-3 h-3" />
+              已连接
             </Badge>
-            <Button variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-2" />
-              导出设置
-            </Button>
           </div>
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid grid-cols-7 w-full max-w-3xl">
+          <TabsList className="grid grid-cols-5 w-full max-w-2xl">
             <TabsTrigger value="profile" className="gap-2">
               <User className="w-4 h-4" />
               <span className="hidden lg:inline">个人资料</span>
@@ -249,10 +432,6 @@ useEffect(() => {
             <TabsTrigger value="warehouse" className="gap-2">
               <Building2 className="w-4 h-4" />
               <span className="hidden lg:inline">仓库</span>
-            </TabsTrigger>
-            <TabsTrigger value="ai" className="gap-2">
-              <Brain className="w-4 h-4" />
-              <span className="hidden lg:inline">AI 助手</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="gap-2">
               <Bell className="w-4 h-4" />
@@ -266,10 +445,6 @@ useEffect(() => {
               <Shield className="w-4 h-4" />
               <span className="hidden lg:inline">安全</span>
             </TabsTrigger>
-            <TabsTrigger value="integrations" className="gap-2">
-              <Link2 className="w-4 h-4" />
-              <span className="hidden lg:inline">集成</span>
-            </TabsTrigger>
           </TabsList>
 
           {/* 个人资料 */}
@@ -281,45 +456,101 @@ useEffect(() => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-6">
-                  <Avatar className="w-24 h-24 border-4 border-primary/10">
-                    <AvatarImage src={avatarUrl} />
-                    <AvatarFallback>JD</AvatarFallback>
-                  </Avatar>
-                  <div className="space-y-2">
+                  <div className="relative">
+                    <Avatar className="w-24 h-24 border-4 border-primary/10">
+                      <AvatarImage src={getAvatarUrl()} />
+                      <AvatarFallback>
+                        {userData?.username?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    {avatarUrl && (
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-8 w-8 rounded-full"
+                        onClick={handleDeleteAvatar}
+                        disabled={uploadingAvatar}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="space-y-2 flex-1">
                     <div className="flex items-center gap-3">
-                      <Input id="avatar-upload" type="file" accept="image/png,image/jpeg,image/gif" onChange={handleAvatarChange} className="max-w-xs" />
-                      <span className="text-sm text-muted-foreground">支持 PNG / JPG / GIF，最大 5MB</span>
+                      <Label htmlFor="avatar-upload" className="cursor-pointer">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+                          {uploadingAvatar ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Upload className="w-4 h-4" />
+                          )}
+                          <span>上传头像</span>
+                        </div>
+                      </Label>
+                      <Input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                        disabled={uploadingAvatar}
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        支持 PNG / JPG / WEBP，最大 2MB
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name">姓名</Label>
-                    <Input id="name" defaultValue="张仓管" />
+                    <Label htmlFor="username">用户名</Label>
+                    <Input
+                      id="username"
+                      value={profileForm.username}
+                      onChange={(e) => setProfileForm({...profileForm, username: e.target.value})}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">邮箱</Label>
-                    <Input id="email" type="email" defaultValue="zhangcg@warehouse.com" />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={profileForm.email}
+                      onChange={(e) => setProfileForm({...profileForm, email: e.target.value})}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">电话</Label>
-                    <Input id="phone" defaultValue="138-0000-0000" />
+                    <Input
+                      id="phone"
+                      value={profileForm.phone}
+                      onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="full_name">姓名</Label>
+                    <Input
+                      id="full_name"
+                      value={profileForm.full_name}
+                      onChange={(e) => setProfileForm({...profileForm, full_name: e.target.value})}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="role">角色</Label>
-                    <Select defaultValue="manager">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">管理员</SelectItem>
-                        <SelectItem value="manager">仓库经理</SelectItem>
-                        <SelectItem value="operator">操作员</SelectItem>
-                        <SelectItem value="viewer">只读</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      id="role"
+                      value={getRoleText(userData?.role || '')}
+                      disabled
+                    />
                   </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveProfile} disabled={saving}>
+                    {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    保存个人资料
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -333,213 +564,120 @@ useEffect(() => {
                 <CardDescription>管理仓库基础参数与偏好</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="warehouse-name">仓库名称</Label>
-                    <Input id="warehouse-name" defaultValue="主配送中心" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="warehouse-id">仓库 ID</Label>
-                    <Input id="warehouse-id" defaultValue="WH-001-SH" disabled />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-primary" />
-                    位置与时区
-                  </h3>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>时区</Label>
-                      <Select defaultValue="est">
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="est">北美东部时间（EST）</SelectItem>
-                          <SelectItem value="cst">北美中部时间（CST）</SelectItem>
-                          <SelectItem value="mst">北美山地时间（MST）</SelectItem>
-                          <SelectItem value="pst">北美太平洋时间（PST）</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>温度单位</Label>
-                      <RadioGroup defaultValue="celsius">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="celsius" id="celsius" />
-                          <Label htmlFor="celsius">摄氏（°C）</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="fahrenheit" id="fahrenheit" />
-                          <Label htmlFor="fahrenheit">华氏（°F）</Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Package className="w-5 h-5 text-primary" />
-                    库存策略
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>低库存告警阈值</Label>
-                        <p className="text-sm text-muted-foreground">当库存低于该百分比时提醒</p>
+                {!warehouseConfig ? (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>仓库配置不存在，请联系管理员</AlertDescription>
+                  </Alert>
+                ) : (
+                  <>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="warehouse-name">仓库名称</Label>
+                        <Input
+                          id="warehouse-name"
+                          value={warehouseForm.warehouse_name}
+                          onChange={(e) => setWarehouseForm({...warehouseForm, warehouse_name: e.target.value})}
+                          disabled={!userData || !['admin', 'manager', 'tester'].includes(userData.role)}
+                        />
                       </div>
-                      <div className="flex items-center gap-4">
-                        <Slider value={[lowStockThreshold]} max={100} step={5} className="w-32" onValueChange={(v) => setLowStockThreshold(v[0])} />
-                        <span className="text-sm font-medium w-12 text-right">{lowStockThreshold}%</span>
+                      <div className="space-y-2">
+                        <Label htmlFor="warehouse-location">位置</Label>
+                        <Input
+                          id="warehouse-location"
+                          value={warehouseForm.location}
+                          onChange={(e) => setWarehouseForm({...warehouseForm, location: e.target.value})}
+                          disabled={!userData || !['admin', 'manager', 'tester'].includes(userData.role)}
+                        />
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* 按需求删除“存储用量”板块 */}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    <Separator />
 
-          {/* AI 助手 */}
-          <TabsContent value="ai" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-purple-500" />
-                  AI 助手配置
-                </CardTitle>
-                <CardDescription>自定义 AI 助手的行为与能力</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-lg border bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
-                    <div className="space-y-0.5">
-                      <Label className="text-base">启用 AI 助手</Label>
-                      <p className="text-sm text-muted-foreground">获取智能洞察与建议</p>
-                    </div>
-                    <Switch
-                      checked={aiSettings.enabled}
-                      onCheckedChange={() => handleAIToggle('enabled')}
-                    />
-                  </div>
-
-                  {aiSettings.enabled && (
-                    <>
-                      <Separator />
-
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">功能</h3>
-
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                              <Label>自动建议</Label>
-                              <p className="text-sm text-muted-foreground">基于你的数据主动给出洞察</p>
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <MapPin className="w-5 h-5 text-primary" />
+                        位置与时区
+                      </h3>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>时区</Label>
+                          <Select
+                            value={warehouseForm.timezone}
+                            onValueChange={(value) => setWarehouseForm({...warehouseForm, timezone: value})}
+                            disabled={!userData || !['admin', 'manager', 'tester'].includes(userData.role)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Asia/Shanghai">中国时间（CST）</SelectItem>
+                              <SelectItem value="America/New_York">北美东部时间（EST）</SelectItem>
+                              <SelectItem value="America/Chicago">北美中部时间（CST）</SelectItem>
+                              <SelectItem value="America/Denver">北美山地时间（MST）</SelectItem>
+                              <SelectItem value="America/Los_Angeles">北美太平洋时间（PST）</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>温度单位</Label>
+                          <RadioGroup
+                            value={warehouseForm.temperature_unit}
+                            onValueChange={(value) => setWarehouseForm({...warehouseForm, temperature_unit: value})}
+                            disabled={!userData || !['admin', 'manager', 'tester'].includes(userData.role)}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="celsius" id="celsius" />
+                              <Label htmlFor="celsius">摄氏（°C）</Label>
                             </div>
-                            <Switch
-                              checked={aiSettings.autoSuggestions}
-                              onCheckedChange={() => handleAIToggle('autoSuggestions')}
-                            />
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                              <Label>语音输入</Label>
-                              <p className="text-sm text-muted-foreground">使用语音与系统交互</p>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="fahrenheit" id="fahrenheit" />
+                              <Label htmlFor="fahrenheit">华氏（°F）</Label>
                             </div>
-                            <Switch
-                              checked={aiSettings.voiceInput}
-                              onCheckedChange={() => handleAIToggle('voiceInput')}
-                            />
-                          </div>
+                          </RadioGroup>
                         </div>
                       </div>
+                    </div>
 
-                      <Separator />
+                    <Separator />
 
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <Package className="w-5 h-5 text-primary" />
+                        库存策略
+                      </h3>
                       <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">性能</h3>
-
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label>上下文记忆</Label>
-                            <Select
-                              value={aiSettings.contextMemory as 'none' | 'session' | 'persistent'}
-                              onValueChange={(value) => setAISettings({ ...aiSettings, contextMemory: value })}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">不记忆</SelectItem>
-                                <SelectItem value="session">仅当前会话</SelectItem>
-                                <SelectItem value="persistent">长期记忆</SelectItem>
-                              </SelectContent>
-                            </Select>
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label>低库存告警阈值</Label>
+                            <p className="text-sm text-muted-foreground">当库存低于该数量时提醒</p>
                           </div>
-
-                          <div className="space-y-2">
-                            <Label>响应速度</Label>
-                            <RadioGroup
-                              value={aiSettings.responseSpeed as 'fast' | 'balanced' | 'accurate'}
-                              onValueChange={(value) => setAISettings({ ...aiSettings, responseSpeed: value })}
-                            >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="fast" id="fast" />
-                                <Label htmlFor="fast" className="flex items-center gap-2">
-                                  <Zap className="w-4 h-4" />
-                                  快速（准确度略低）
-                                </Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="balanced" id="balanced" />
-                                <Label htmlFor="balanced" className="flex items-center gap-2">
-                                  <BarChart3 className="w-4 h-4" />
-                                  平衡
-                                </Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="accurate" id="accurate" />
-                                <Label htmlFor="accurate" className="flex items-center gap-2">
-                                  <Brain className="w-4 h-4" />
-                                  准确（速度较慢）
-                                </Label>
-                              </div>
-                            </RadioGroup>
+                          <div className="flex items-center gap-4">
+                            <Slider
+                              value={[warehouseForm.low_stock_threshold]}
+                              max={100}
+                              step={5}
+                              className="w-32"
+                              onValueChange={(v) => setWarehouseForm({...warehouseForm, low_stock_threshold: v[0]})}
+                              disabled={!userData || !['admin', 'manager', 'tester'].includes(userData.role)}
+                            />
+                            <span className="text-sm font-medium w-12 text-right">{warehouseForm.low_stock_threshold}</span>
                           </div>
                         </div>
                       </div>
+                    </div>
 
-                      <Separator />
-
-                      <div className="p-4 rounded-lg bg-muted/50">
-                        <h4 className="font-semibold mb-2">AI 使用统计</h4>
-                        <div className="grid grid-cols-3 gap-4 text-center">
-                          <div>
-                            <p className="text-2xl font-bold text-primary">1,247</p>
-                            <p className="text-sm text-muted-foreground">今日查询</p>
-                          </div>
-                          <div>
-                            <p className="text-2xl font-bold text-green-600">94%</p>
-                            <p className="text-sm text-muted-foreground">准确率</p>
-                          </div>
-                          <div>
-                            <p className="text-2xl font-bold text-purple-600">2.3s</p>
-                            <p className="text-sm text-muted-foreground">平均响应</p>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={handleSaveWarehouse}
+                        disabled={saving || !userData || !['admin', 'manager', 'tester'].includes(userData.role)}
+                      >
+                        {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        保存仓库配置
+                      </Button>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -549,7 +687,7 @@ useEffect(() => {
             <Card>
               <CardHeader>
                 <CardTitle>通知偏好</CardTitle>
-                <CardDescription>选择你的通知方式与类型</CardDescription>
+                <CardDescription>选择你的通知方式与类型（暂时本地存储）</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
@@ -639,22 +777,12 @@ useEffect(() => {
                   </div>
                 </div>
 
-                <Separator />
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">免打扰</h3>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>请勿打扰</Label>
-                      <p className="text-sm text-muted-foreground">静音非关键通知</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Input type="time" defaultValue="22:00" className="w-24" />
-                      <span>至</span>
-                      <Input type="time" defaultValue="07:00" className="w-24" />
-                    </div>
-                  </div>
-                </div>
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    通知设置当前仅保存在本地，后端API支持即将推出
+                  </AlertDescription>
+                </Alert>
               </CardContent>
             </Card>
           </TabsContent>
@@ -701,9 +829,6 @@ useEffect(() => {
 
                 <Separator />
 
-                {/* 删除 Display Density 模块 */}
-
-                <Separator />
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">界面选项</h3>
                   <div className="space-y-3">
@@ -721,6 +846,12 @@ useEffect(() => {
                     </div>
                   </div>
                 </div>
+
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveAppearance}>
+                    保存外观设置
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -734,150 +865,74 @@ useEffect(() => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-lg border bg-green-50 dark:bg-green-950/20">
-                    <div className="flex items-center gap-3">
-                      <Shield className="w-5 h-5 text-green-600" />
-                      <div>
-                        <p className="font-medium">两步验证</p>
-                        <p className="text-sm text-muted-foreground">当前已启用</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm">管理</Button>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-semibold">密码</h3>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm">45 天前更新</p>
-                        <p className="text-sm text-muted-foreground">请使用强且唯一的密码</p>
-                      </div>
-                      <Button variant="outline">
-                        <Key className="w-4 h-4 mr-2" />
-                        修改密码
-                      </Button>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-semibold">活跃会话</h3>
+                  <h3 className="text-lg font-semibold">修改密码</h3>
+                  <div className="space-y-3 max-w-md">
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between p-3 rounded-lg border">
-                        <div className="flex items-center gap-3">
-                          <Monitor className="w-5 h-5 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium">Windows 台式机 - Chrome</p>
-                            <p className="text-sm text-muted-foreground">美国纽约 • 当前会话</p>
-                          </div>
-                        </div>
-                        <Badge variant="secondary">活动中</Badge>
-                      </div>
-                      <div className="flex items-center justify-between p-3 rounded-lg border">
-                        <div className="flex items-center gap-3">
-                          <Smartphone className="w-5 h-5 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium">iPhone 14 Pro</p>
-                            <p className="text-sm text-muted-foreground">美国布鲁克林 • 2 小时前</p>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="sm">远程登出</Button>
-                      </div>
+                      <Label htmlFor="current_password">当前密码</Label>
+                      <Input
+                        id="current_password"
+                        type="password"
+                        value={passwordForm.current_password}
+                        onChange={(e) => setPasswordForm({...passwordForm, current_password: e.target.value})}
+                      />
                     </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-semibold">API 密钥</h3>
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between p-3 rounded-lg border">
-                        <div> {/* 实际开发需要在这里调用api */}
-                          <p className="font-medium font-mono text-sm">wh_live_k3y_****4a2b</p>
-                          <p className="text-sm text-muted-foreground">创建于 2025-01-15</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button variant="ghost" size="sm">重新生成</Button>
-                          <Button variant="ghost" size="sm" className="text-destructive">删除</Button>
-                        </div>
-                      </div>
+                      <Label htmlFor="new_password">新密码</Label>
+                      <Input
+                        id="new_password"
+                        type="password"
+                        value={passwordForm.new_password}
+                        onChange={(e) => setPasswordForm({...passwordForm, new_password: e.target.value})}
+                      />
                     </div>
-                    <Button variant="outline" className="w-full">
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm_password">确认新密码</Label>
+                      <Input
+                        id="confirm_password"
+                        type="password"
+                        value={passwordForm.confirm_password}
+                        onChange={(e) => setPasswordForm({...passwordForm, confirm_password: e.target.value})}
+                      />
+                    </div>
+                    <Button onClick={handleChangePassword} disabled={saving}>
+                      {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                       <Key className="w-4 h-4 mr-2" />
-                      创建新的 API 密钥
+                      修改密码
                     </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          {/* 集成 */}
-          <TabsContent value="integrations" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>第三方集成</CardTitle>
-                <CardDescription>将仓库系统与外部服务打通</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {[
-                    { name: 'Shopify 店铺', icon: '🛍️', status: 'connected', description: '同步在线订单与库存' },
-                    { name: 'QuickBooks 财务', icon: '📊', status: 'connected', description: '推送财务数据到会计系统' },
-                    { name: 'Slack 团队', icon: '💬', status: 'disconnected', description: '向频道发送仓库播报' },
-                    { name: 'Google 表格', icon: '📄', status: 'disconnected', description: '导出报表到共享表格' },
-                    { name: 'Zapier 自动化', icon: '⚡', status: 'disconnected', description: '自定义跨系统工作流' },
-                    { name: 'Microsoft Teams 协作', icon: '👥', status: 'disconnected', description: '推送通知给值班团队' },
-                  ].map((integration) => (
-                    <div key={integration.name} className="flex items-center justify-between p-4 rounded-lg border">
-                      <div className="flex items-center gap-3">
-                        <div className="text-2xl">{integration.icon}</div>
-                        <div>
-                          <p className="font-medium">{integration.name}</p>
-                          <p className="text-sm text-muted-foreground">{integration.description}</p>
-                        </div>
-                      </div>
-                      <Button
-                        variant={integration.status === 'connected' ? 'secondary' : 'outline'}
-                        size="sm"
-                        className="gap-1"
-                      >
-                        {integration.status === 'connected' ? (
-                          <>
-                            <Check className="w-3 h-3" />
-                            已连接
-                          </>
-                        ) : (
-                          <>
-                            连接
-                            <ChevronRight className="w-3 h-3" />
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                <Separator />
+
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    两步验证、活跃会话管理、API密钥功能即将推出
+                  </AlertDescription>
+                </Alert>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* 底部操作区 */}
-        <div className="flex justify-end gap-4 pt-6">
-           <Button variant="outline" onClick={handleCancel}>取消</Button>
-          <Button className="gap-2" onClick={handleSave}>
-            <Check className="w-4 h-4" />
-            保存更改
-          </Button>
-        </div>
       </div>
 
-      {/* 简易 Toast 通知 */}
+      {/* Toast 通知 */}
       {toast.visible && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="rounded-md bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-lg px-4 py-3">
-            {toast.message}
+        <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-5">
+          <div className={`rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 ${
+            toast.type === 'error'
+              ? 'bg-red-600 text-white'
+              : 'bg-green-600 text-white'
+          }`}>
+            {toast.type === 'error' ? (
+              <AlertCircle className="w-5 h-5" />
+            ) : (
+              <Check className="w-5 h-5" />
+            )}
+            <span>{toast.message}</span>
+            <button onClick={() => setToast({ visible: false, message: '', type: 'success' })}>
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}

@@ -699,6 +699,12 @@ class ApiService {
     });
   }
 
+  async deleteAvatar(): Promise<{ message: string; avatar_url: null }> {
+    return this.request<{ message: string; avatar_url: null }>('/api/v1/users/me/avatar', {
+      method: 'DELETE',
+    });
+  }
+
   async getWarehouseConfig(): Promise<WarehouseConfig> {
     return this.request<WarehouseConfig>('/api/v1/warehouse/config');
   }
