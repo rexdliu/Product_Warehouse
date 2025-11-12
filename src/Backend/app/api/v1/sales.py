@@ -19,6 +19,7 @@ from app.models.sales import Distributor, SalesOrder
 from app.models.product import Product
 from app.api.deps import require_manager_or_above
 from app.models.user import User
+from app.utils.activity import log_activity
 
 router = APIRouter()
 
@@ -136,6 +137,20 @@ def create_sales_order(
     )
 
     order = sales_crud.sales_order.create(db, obj_in=order_create)
+
+    # 记录活动日志
+    log_activity(
+        db=db,
+        activity_type="order",
+        action="创建订单",
+        item_name=f"订单 {order.order_code}",
+        user_id=current_user.id,
+        reference_id=order.id,
+        reference_type="order"
+    )
+
+    db.commit()
+    db.refresh(order)
     return SalesOrderInDB.model_validate(order)
 
 
@@ -144,9 +159,39 @@ def update_sales_order(
     order_id: int,
     order_in: SalesOrderUpdate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_manager_or_above)
 ) -> SalesOrderInDB:
     db_obj = sales_crud.sales_order.get(db, order_id)
     if not db_obj:
         raise HTTPException(status_code=404, detail="Order not found")
+
+    # 记录更新前的状态
+    old_status = db_obj.status
+
     order = sales_crud.sales_order.update(db, db_obj=db_obj, obj_in=order_in)
+
+    # 记录活动日志
+    action = "更新订单"
+    if order_in.status and order_in.status != old_status:
+        status_map = {
+            "pending": "待处理",
+            "processing": "处理中",
+            "shipped": "已发货",
+            "completed": "已完成",
+            "cancelled": "已取消"
+        }
+        action = f"订单状态变更为{status_map.get(order_in.status, order_in.status)}"
+
+    log_activity(
+        db=db,
+        activity_type="order",
+        action=action,
+        item_name=f"订单 {order.order_code}",
+        user_id=current_user.id,
+        reference_id=order.id,
+        reference_type="order"
+    )
+
+    db.commit()
+    db.refresh(order)
     return SalesOrderInDB.model_validate(order)

@@ -67,6 +67,36 @@ class ProductBase(BaseModel):
 class ProductCreate(ProductBase):
     """创建产品模型"""
     category_id: int = Field(..., gt=0, description="产品分类ID（必填）")  # type: ignore[assignment]
+    part_number: str = Field(..., min_length=1, max_length=100, description="Cummins零件号（必填）")  # type: ignore[assignment]
+
+
+class ProductCreateRequest(BaseModel):
+    """创建产品的请求模型 - 包含warehouse信息"""
+    # 产品基本信息
+    name: str = Field(..., min_length=1, max_length=200, description="产品名称")
+    sku: str = Field(..., min_length=1, max_length=100, description="SKU")
+    part_number: str = Field(..., min_length=1, max_length=100, description="Cummins零件号")
+    manufacturer: str = Field(default="Cummins", max_length=100, description="制造商")
+    description: Optional[str] = Field(None, description="产品描述")
+
+    # 分类和价格
+    category_id: int = Field(..., gt=0, description="产品分类ID")
+    price: float = Field(..., gt=0, description="售价")
+    cost: Optional[float] = Field(None, ge=0, description="成本")
+
+    # 库存管理
+    unit: str = Field(default="pcs", max_length=20, description="单位: pcs/box/liter")
+    min_stock_level: int = Field(default=10, ge=0, description="最低库存预警线")
+
+    # 仓库和初始库存
+    warehouse_id: int = Field(..., gt=0, description="仓库ID（必填）")
+    initial_quantity: int = Field(default=0, ge=0, description="初始库存数量")
+    location_code: Optional[str] = Field(None, max_length=50, description="货位编号")
+
+    # 其他
+    image_url: Optional[str] = Field(None, max_length=255, description="产品图片URL")
+    is_active: bool = Field(default=True, description="是否启用")
+
 
 # 更新产品模型
 class ProductUpdate(BaseModel):
