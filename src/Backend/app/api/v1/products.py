@@ -119,9 +119,9 @@ def create_product(
         db=db,
         activity_type="product",
         action="创建产品",
-        item_name=product.name,
-        user_id=current_user.id,
-        reference_id=product.id,
+        item_name=str(product.name),  # type: ignore[arg-type]
+        user_id=int(current_user.id),  # type: ignore[arg-type]
+        reference_id=int(product.id),  # type: ignore[arg-type]
         reference_type="product"
     )
 
@@ -131,9 +131,9 @@ def create_product(
             db=db,
             activity_type="inventory",
             action="入库",
-            item_name=f"{product.name} (初始库存)",
-            user_id=current_user.id,
-            reference_id=product.id,
+            item_name=f"{product.name} (初始库存)",  # type: ignore[arg-type]
+            user_id=int(current_user.id),  # type: ignore[arg-type]
+            reference_id=int(product.id),  # type: ignore[arg-type]
             reference_type="product"
         )
 

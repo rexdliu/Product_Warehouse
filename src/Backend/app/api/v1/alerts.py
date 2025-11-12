@@ -5,9 +5,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from app.core.database import get_db
-from app.models.inventory import Inventory
+from app.models.inventory import Inventory, Warehouse
 from app.models.product import Product
-from app.models.warehouse import Warehouse
 from app.utils.activity import log_activity
 from pydantic import BaseModel
 

@@ -132,7 +132,7 @@ def create_sales_order(
         order_date=datetime.now(),
         warehouse_id=order_in.warehouse_id,
         delivery_date=order_in.delivery_date,
-        user_id=current_user.id,
+        user_id=int(current_user.id),  # type: ignore[arg-type]
         notes=order_in.notes
     )
 
@@ -143,9 +143,9 @@ def create_sales_order(
         db=db,
         activity_type="order",
         action="创建订单",
-        item_name=f"订单 {order.order_code}",
-        user_id=current_user.id,
-        reference_id=order.id,
+        item_name=f"订单 {order.order_code}",  # type: ignore[arg-type]
+        user_id=int(current_user.id),  # type: ignore[arg-type]
+        reference_id=int(order.id),  # type: ignore[arg-type]
         reference_type="order"
     )
 
@@ -186,9 +186,9 @@ def update_sales_order(
         db=db,
         activity_type="order",
         action=action,
-        item_name=f"订单 {order.order_code}",
-        user_id=current_user.id,
-        reference_id=order.id,
+        item_name=f"订单 {order.order_code}",  # type: ignore[arg-type]
+        user_id=int(current_user.id),  # type: ignore[arg-type]
+        reference_id=int(order.id),  # type: ignore[arg-type]
         reference_type="order"
     )
 
