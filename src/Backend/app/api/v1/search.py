@@ -55,8 +55,8 @@ def global_search(
     for product in products:
         results.append(SearchResult(
             type="product",
-            id=product.id,
-            title=product.name,
+            id=product.id, # type: ignore[arg-type]
+            title=product.name, # type: ignore[arg-type]
             subtitle=f"SKU: {product.sku} | 零件号: {product.part_number or 'N/A'}",
             url=f"/inventory?product_id={product.id}"
         ))
@@ -72,8 +72,8 @@ def global_search(
     for order in orders:
         results.append(SearchResult(
             type="order",
-            id=order.id,
-            title=order.order_code,
+            id=order.id, # type: ignore[arg-type]
+            title=order.order_code, # type: ignore[arg-type]
             subtitle=f"产品: {order.product_name} | 状态: {order.status}",
             url=f"/sales/orders/{order.id}"
         ))
@@ -90,8 +90,8 @@ def global_search(
     for dist in distributors:
         results.append(SearchResult(
             type="distributor",
-            id=dist.id,
-            title=dist.name,
+            id=dist.id, # type: ignore[arg-type]
+            title=dist.name, # type: ignore[arg-type]
             subtitle=f"代码: {dist.code or 'N/A'} | 区域: {dist.region}",
             url=f"/sales/distributors/{dist.id}"
         ))
@@ -107,8 +107,8 @@ def global_search(
     for wh in warehouses:
         results.append(SearchResult(
             type="warehouse",
-            id=wh.id,
-            title=wh.name,
+            id=wh.id, # type: ignore[arg-type]
+            title=wh.name, # type: ignore[arg-type]
             subtitle=f"代码: {wh.code or 'N/A'} | 位置: {wh.location or 'N/A'}",
             url=f"/inventory/warehouses/{wh.id}"
         ))

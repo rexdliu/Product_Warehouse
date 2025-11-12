@@ -210,8 +210,7 @@ def delete_avatar(
     删除用户的自定义头像，恢复使用默认头像
     """
     # 如果用户有自定义头像，删除文件
-    if current_user.avatar_url and current_user.avatar_url.startswith("/static/avatars/"):
-        try:
+    if current_user.avatar_url and current_user.avatar_url.startswith("/static/avatars/"):        try: # type: ignore[arg-type]
             # 获取文件路径
             avatars_dir = Path(__file__).parent.parent.parent / "static" / "avatars"
             filename = current_user.avatar_url.split("/")[-1]
@@ -250,7 +249,7 @@ def get_default_avatar(
         "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
         "#F7DC6F", "#BB8FCE", "#85C1E2", "#F8B739", "#52B788"
     ]
-    user_id = int(current_user.id) if current_user.id else 0
+    user_id = int(current_user.id) if current_user.id else 0   #type: ignore[arg-type]
     bg_color = colors[user_id % len(colors)]
 
     # 生成SVG
