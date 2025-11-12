@@ -9,7 +9,7 @@ WebSocket 连接管理器
 4. 广播通知给所有连接用户
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 from fastapi import WebSocket
 import json
 
@@ -84,8 +84,8 @@ class ConnectionManager:
         title: str,
         message: str,
         notification_type: str,
-        reference_id: int = None,
-        reference_type: str = None
+        reference_id: Optional[int] = None,
+        reference_type: Optional[str] = None
     ):
         """
         向指定用户发送通知
