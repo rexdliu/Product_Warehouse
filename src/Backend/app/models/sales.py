@@ -10,13 +10,13 @@ class Distributor(Base):
     __tablename__ = "distributors"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, unique=True)
-    code = Column(String, unique=True)  # 经销商代码，如 "DIST001"
-    contact_person = Column(String, nullable=False)
-    phone = Column(String, nullable=False)
-    email = Column(String)  # 邮箱
-    address = Column(String)  # 详细地址
-    region = Column(String, nullable=False)
+    name = Column(String(200), nullable=False, unique=True)
+    code = Column(String(50), unique=True)  # 经销商代码，如 "DIST001"
+    contact_person = Column(String(100), nullable=False)
+    phone = Column(String(20), nullable=False)
+    email = Column(String(100))  # 邮箱
+    address = Column(String(255))  # 详细地址
+    region = Column(String(100), nullable=False)
     credit_limit = Column(Float, default=0.0)  # 信用额度
     is_active = Column(Boolean, default=True)  # 是否启用
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -28,16 +28,16 @@ class SalesOrder(Base):
     __tablename__ = "sales_orders"
 
     id = Column(Integer, primary_key=True, index=True)
-    order_code = Column(String, unique=True, nullable=False, index=True)
+    order_code = Column(String(50), unique=True, nullable=False, index=True)
     distributor_id = Column(Integer, ForeignKey("distributors.id"), nullable=False, index=True)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
-    product_name = Column(String, nullable=False)
+    product_name = Column(String(200), nullable=False)
     quantity = Column(Integer, nullable=False)
     unit_price = Column(Float, nullable=False)  # 单价
     total_value = Column(Float, nullable=False)
 
     # 订单状态管理
-    status = Column(String, default="pending", index=True)  # pending, processing, completed, cancelled, shipped
+    status = Column(String(20), default="pending", index=True)  # pending, processing, completed, cancelled, shipped
     warehouse_id = Column(Integer, ForeignKey("warehouses.id"))  # 出货仓库
     delivery_date = Column(DateTime(timezone=True))  # 计划交货日期
     completed_at = Column(DateTime(timezone=True))  # 实际完成时间
