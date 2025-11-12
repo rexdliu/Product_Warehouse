@@ -7,11 +7,14 @@ WarehouseAI 后端主应用入口文件
 2. 配置 CORS 中间件以支持跨域请求
 3. 注册 API 路由
 4. 提供健康检查端点
+5. 配置静态文件服务（用于头像等资源）
 """
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from .api.v1 import api_router
 from app.core.config import settings
 from app.core.database import Base, engine
@@ -39,6 +42,15 @@ app.add_middleware(
 
 # 包含API路由
 app.include_router(api_router, prefix="/api/v1")
+
+# 配置静态文件服务
+# 获取static目录的绝对路径
+static_dir = Path(__file__).parent / "static"
+static_dir.mkdir(exist_ok=True)  # 确保static目录存在
+(static_dir / "avatars").mkdir(exist_ok=True)  # 确保avatars子目录存在
+
+# 挂载静态文件服务
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 @app.get("/")
 async def root():

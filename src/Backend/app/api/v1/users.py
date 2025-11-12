@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, cast
 import os
 import uuid
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, Response
 from sqlalchemy.orm import Session
 from PIL import Image
 from app.core.database import get_db
@@ -161,7 +161,8 @@ async def upload_avatar(
         )
 
     # 3. 创建avatars目录（如果不存在）
-    avatars_dir = Path("static/avatars")
+    # 使用绝对路径，指向app/static/avatars
+    avatars_dir = Path(__file__).parent.parent.parent / "static" / "avatars"
     avatars_dir.mkdir(parents=True, exist_ok=True)
 
     # 4. 生成唯一文件名
@@ -195,6 +196,79 @@ async def upload_avatar(
     db.commit()
 
     return AvatarUploadResponse(avatar_url=avatar_url)
+
+
+@router.delete("/me/avatar", response_model=dict)
+def delete_avatar(
+    *,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+) -> Any:
+    """
+    删除用户头像
+
+    删除用户的自定义头像，恢复使用默认头像
+    """
+    # 如果用户有自定义头像，删除文件
+    if current_user.avatar_url and current_user.avatar_url.startswith("/static/avatars/"):
+        try:
+            # 获取文件路径
+            avatars_dir = Path(__file__).parent.parent.parent / "static" / "avatars"
+            filename = current_user.avatar_url.split("/")[-1]
+            filepath = avatars_dir / filename
+
+            # 删除文件
+            if filepath.exists():
+                filepath.unlink()
+        except Exception as e:
+            # 即使文件删除失败，也继续清空数据库中的记录
+            print(f"删除头像文件失败: {str(e)}")
+
+    # 清空数据库中的avatar_url
+    current_user.avatar_url = None  # type: ignore[assignment]
+    db.add(current_user)
+    db.commit()
+
+    return {"message": "头像已删除", "avatar_url": None}
+
+
+@router.get("/me/avatar/default")
+def get_default_avatar(
+    current_user: User = Depends(get_current_active_user)
+) -> Any:
+    """
+    获取默认头像SVG
+
+    基于用户名首字母生成SVG头像
+    """
+    # 获取用户名首字母
+    username = str(current_user.username)
+    initial = username[0].upper() if username else "U"
+
+    # 生成随机背景色（基于用户ID确保一致性）
+    colors = [
+        "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
+        "#F7DC6F", "#BB8FCE", "#85C1E2", "#F8B739", "#52B788"
+    ]
+    user_id = int(current_user.id) if current_user.id else 0
+    bg_color = colors[user_id % len(colors)]
+
+    # 生成SVG
+    svg = f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="{bg_color}"/>
+  <text x="100" y="100" font-family="Arial, sans-serif" font-size="80" font-weight="bold"
+        fill="white" text-anchor="middle" dominant-baseline="central">
+    {initial}
+  </text>
+</svg>'''
+
+    return Response(
+        content=svg.encode('utf-8'),
+        media_type="image/svg+xml",
+        headers={"Content-Disposition": f"inline; filename=avatar_{username}.svg"}
+    )
+
 
 @router.post("/me/change-password", response_model=PasswordChangeResponse)
 def change_password(
