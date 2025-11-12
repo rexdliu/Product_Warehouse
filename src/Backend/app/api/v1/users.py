@@ -102,7 +102,7 @@ def update_user_profile(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"用户名 '{profile_data.username}' 已被使用"
             )
-        current_user.username = profile_data.username
+        current_user.username = profile_data.username  # type: ignore[assignment]
 
     # 检查email唯一性（如果修改）
     if profile_data.email is not None and profile_data.email != current_user.email:
@@ -112,15 +112,15 @@ def update_user_profile(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"邮箱 '{profile_data.email}' 已被使用"
             )
-        current_user.email = profile_data.email
+        current_user.email = profile_data.email  # type: ignore[assignment]
 
     # 更新其他字段
     if profile_data.phone is not None:
-        current_user.phone = profile_data.phone
+        current_user.phone = profile_data.phone  # type: ignore[assignment]
     if profile_data.full_name is not None:
-        current_user.full_name = profile_data.full_name
+        current_user.full_name = profile_data.full_name  # type: ignore[assignment]
     if profile_data.language is not None:
-        current_user.language = profile_data.language
+        current_user.language = profile_data.language  # type: ignore[assignment]
 
     db.add(current_user)
     db.commit()
@@ -190,7 +190,7 @@ async def upload_avatar(
 
     # 6. 生成URL并更新数据库
     avatar_url = f"/static/avatars/{filename}"
-    current_user.avatar_url = avatar_url
+    current_user.avatar_url = avatar_url  # type: ignore[assignment]
     db.add(current_user)
     db.commit()
 
@@ -226,7 +226,7 @@ def change_password(
 
     # 更新密码
     hashed_password = get_password_hash(password_data.new_password)
-    current_user.hashed_password = hashed_password
+    current_user.hashed_password = hashed_password  # type: ignore[assignment]
     db.add(current_user)
     db.commit()
 

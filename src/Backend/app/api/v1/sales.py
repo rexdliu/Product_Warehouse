@@ -113,7 +113,7 @@ def create_sales_order(
     ).order_by(SalesOrder.id.desc()).first()
 
     if last_order:
-        last_num = int(last_order.order_code[-4:])
+        last_num = int(last_order.order_code[-4:])  # type: ignore[arg-type]
         order_code = f"SO{today_str}{(last_num + 1):04d}"
     else:
         order_code = f"SO{today_str}1001"
@@ -123,7 +123,9 @@ def create_sales_order(
     order_data["order_code"] = order_code
     order_data["user_id"] = current_user.id
 
-    order = sales_crud.sales_order.create(db, obj_in=order_data)
+    # 创建 SalesOrderCreate 对象
+    order_create = SalesOrderCreate(**order_data)
+    order = sales_crud.sales_order.create(db, obj_in=order_create)
     return SalesOrderInDB.model_validate(order)
 
 

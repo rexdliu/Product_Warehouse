@@ -13,18 +13,30 @@
 | 字段 | 类型 | 说明 | 约束 |
 |------|------|------|------|
 | id | Integer | 主键 | PK, Auto |
-| username | String | 用户名 | Unique, Not Null |
-| email | String | 邮箱 | Unique, Not Null |
-| phone | String | 手机号 | Unique, Not Null |
-| hashed_password | String | 密码哈希 | Not Null |
-| full_name | String | 全名 | - |
-| role | String | 角色 | Default: 'staff' |
+| username | String(50) | 用户名 | Unique, Not Null |
+| email | String(100) | 邮箱 | Unique, Not Null |
+| phone | String(20) | 手机号 | - |
+| full_name | String(100) | 全名 | - |
+| hashed_password | String(255) | 密码哈希 | Not Null |
+| role | String(20) | 角色 | Default: 'staff' |
+| avatar_url | String(255) | 用户头像URL | - |
+| language | String(10) | 界面语言 | Default: 'zh-CN' |
 | is_active | Boolean | 是否激活 | Default: True |
 | is_superuser | Boolean | 是否超级管理员 | Default: False |
 | created_at | DateTime | 创建时间 | Auto |
 | updated_at | DateTime | 更新时间 | Auto |
 
-**索引**: username, email, phone
+**角色 (role)**:
+- `staff`: 员工（只读权限）
+- `manager`: 仓库管理员（管理订单和库存）
+- `admin`: 系统管理员（完全访问）
+- `tester`: 测试账号
+
+**新增字段说明**:
+- `avatar_url`: 用户头像图片URL
+- `language`: 用户界面语言设置（zh-CN/en-US）
+
+**索引**: username, email
 
 ---
 
@@ -34,49 +46,59 @@
 | 字段 | 类型 | 说明 | 约束 |
 |------|------|------|------|
 | id | Integer | 主键 | PK, Auto |
-| name | String | 分类名称 | Unique, Not Null |
-| code | String | 分类代码 | Unique |
+| name | String(100) | 分类名称 | Unique, Not Null |
+| code | String(50) | 分类代码 | Unique |
 | description | Text | 描述 | - |
-| created_at | DateTime | 创建时间 | Auto |
-
-**示例数据**:
-- 发动机 (Engines)
-- 零件 (Parts)
-- 机油 (Oils)
-- 滤芯 (Filters)
-
----
-
-### 3. products (产品表) - **需要优化**
-Cummins 产品信息
-
-| 字段 | 类型 | 说明 | 约束 |
-|------|------|------|------|
-| id | Integer | 主键 | PK, Auto |
-| name | String | 产品名称 | Not Null |
-| sku | String | SKU编码 | Unique, Not Null |
-| **part_number** | **String** | **Cummins零件号** | **Unique, Index** |
-| **engine_model** | **String** | **适用发动机型号** | **Index** |
-| **manufacturer** | **String** | **制造商** | **Default: 'Cummins'** |
-| description | Text | 产品描述 | - |
-| price | Float | 售价 | Not Null |
-| cost | Float | 成本价 | - |
-| **unit** | **String** | **单位** | **Default: 'pcs'** |
-| category_id | Integer | 分类ID | FK |
-| **min_stock_level** | **Integer** | **最低库存预警** | **Default: 10** |
-| image_url | String | 图片URL | - |
+| parent_id | Integer | 父分类ID | FK (self) |
 | is_active | Boolean | 是否启用 | Default: True |
 | created_at | DateTime | 创建时间 | Auto |
 | updated_at | DateTime | 更新时间 | Auto |
 
 **新增字段说明**:
-- `part_number`: Cummins官方零件号，如 "3803682"
+- `parent_id`: 支持分类层级结构，可设置父分类
+- `is_active`: 是否启用该分类
+- `updated_at`: 记录分类信息最后更新时间
+
+**示例数据**:
+- 发动机 (ENGINE)
+- 零配件 (PARTS)
+- 机油 (OIL)
+- 滤芯 (FILTER)
+- 传感器 (SENSOR)
+
+---
+
+### 3. products (产品表)
+Cummins 产品信息
+
+| 字段 | 类型 | 说明 | 约束 |
+|------|------|------|------|
+| id | Integer | 主键 | PK, Auto |
+| name | String(200) | 产品名称 | Not Null |
+| sku | String(100) | SKU编码 | Unique, Not Null |
+| part_number | String(100) | Cummins零件号 | Unique, Index |
+| engine_model | String(50) | 适用发动机型号 | Index |
+| manufacturer | String(100) | 制造商 | Default: 'Cummins' |
+| description | Text | 产品描述 | - |
+| category_id | Integer | 分类ID | FK |
+| price | Decimal(12,2) | 售价 | Not Null |
+| cost | Decimal(12,2) | 成本价 | - |
+| unit | String(20) | 单位 | Default: 'pcs' |
+| image_url | String(255) | 产品图片URL | - |
+| min_stock_level | Integer | 最低库存预警 | Default: 10 |
+| is_active | Boolean | 是否启用 | Default: True |
+| created_at | DateTime | 创建时间 | Auto |
+| updated_at | DateTime | 更新时间 | Auto |
+
+**字段说明**:
+- `part_number`: Cummins官方零件号，如 "3803682", "4937065"
 - `engine_model`: 适用的发动机型号，如 "6BT5.9", "ISF2.8"
 - `manufacturer`: 制造商，默认 Cummins
-- `unit`: 单位（pcs=件, box=箱, liter=升）
-- `min_stock_level`: 最低库存预警线
+- `unit`: 单位（pcs=件, box=箱, liter=升, 台=台, 桶=桶）
+- `image_url`: 产品图片URL路径
+- `min_stock_level`: 最低库存预警线，低于此值会触发警报
 
-**索引**: sku, part_number, engine_model, category_id
+**索引**: name, sku, part_number, engine_model, category_id
 
 ---
 
@@ -86,20 +108,25 @@ Cummins 产品信息
 | 字段 | 类型 | 说明 | 约束 |
 |------|------|------|------|
 | id | Integer | 主键 | PK, Auto |
-| name | String | 仓库名称 | Not Null |
-| code | String | 仓库代码 | Unique |
-| location | String | 位置/地址 | - |
-| **capacity** | **Float** | **总容量（立方米）** | - |
-| **current_usage** | **Float** | **当前使用量** | **Default: 0** |
-| **manager_name** | **String** | **仓库管理员** | - |
-| **phone** | **String** | **联系电话** | - |
+| name | String(100) | 仓库名称 | Not Null |
+| code | String(50) | 仓库代码 | Unique |
+| location | String(255) | 位置/地址 | - |
+| capacity | Decimal(12,2) | 总容量（立方米） | - |
+| current_usage | Decimal(12,2) | 当前使用量 | Default: 0 |
+| manager_name | String(100) | 仓库管理员 | - |
+| phone | String(20) | 联系电话 | - |
 | is_active | Boolean | 是否启用 | Default: True |
 | created_at | DateTime | 创建时间 | Auto |
+| updated_at | DateTime | 更新时间 | Auto |
 
-**新增字段说明**:
+**字段说明**:
+- `code`: 仓库代码，如 "WH001", "WH002"
+- `capacity`: 仓库总容量（立方米）
 - `current_usage`: 当前使用的容量，用于计算使用率
 - `manager_name`: 仓库管理员姓名
 - `phone`: 联系电话
+
+**索引**: name, code
 
 ---
 
@@ -113,13 +140,16 @@ Cummins 产品信息
 | warehouse_id | Integer | 仓库ID | FK, Not Null |
 | quantity | Integer | 可用数量 | Default: 0 |
 | reserved_quantity | Integer | 预留数量 | Default: 0 |
-| **location_code** | **String** | **货位编号** | - |
+| location_code | String(50) | 货位编号 | - |
+| created_at | DateTime | 创建时间 | Auto |
 | updated_at | DateTime | 更新时间 | Auto |
 
-**新增字段说明**:
-- `location_code`: 仓库内具体货位，如 "A-01-03"
+**字段说明**:
+- `quantity`: 当前可用库存数量
+- `reserved_quantity`: 已预留数量（如待发货订单）
+- `location_code`: 仓库内具体货位，如 "A-01-03", "B-10-15"
 
-**索引**: (product_id, warehouse_id) 联合索引
+**索引**: (product_id, warehouse_id) 联合唯一索引, quantity, location_code
 
 ---
 
@@ -131,21 +161,26 @@ Cummins 产品信息
 | id | Integer | 主键 | PK, Auto |
 | product_id | Integer | 产品ID | FK, Not Null |
 | warehouse_id | Integer | 仓库ID | FK, Not Null |
-| transaction_type | String | 交易类型 | Not Null |
+| transaction_type | String(20) | 交易类型 | Not Null |
 | quantity | Integer | 数量 | Not Null |
-| **user_id** | **Integer** | **操作用户** | **FK** |
-| reference | String | 参考单号 | - |
-| notes | String | 备注 | - |
+| user_id | Integer | 操作用户 | FK |
+| reference | String(100) | 参考单号 | - |
+| notes | Text | 备注 | - |
 | created_at | DateTime | 创建时间 | Auto |
 
 **交易类型 (transaction_type)**:
 - `IN`: 入库
 - `OUT`: 出库
-- `ADJUST`: 调整
-- `TRANSFER`: 调拨
+- `ADJUST`: 调整（盘点、损坏等）
+- `TRANSFER`: 调拨（仓库间转移）
 
-**新增字段说明**:
+**字段说明**:
+- `quantity`: 数量（正数为入库，负数为出库）
 - `user_id`: 记录操作人员
+- `reference`: 关联单据号，如订单号、采购单号等
+- `notes`: 详细备注说明
+
+**索引**: product_id, warehouse_id, transaction_type, created_at
 
 ---
 
@@ -155,58 +190,64 @@ Cummins 产品信息
 | 字段 | 类型 | 说明 | 约束 |
 |------|------|------|------|
 | id | Integer | 主键 | PK, Auto |
-| name | String | 经销商名称 | Unique, Not Null |
-| **code** | **String** | **经销商代码** | **Unique** |
-| contact_person | String | 联系人 | Not Null |
-| phone | String | 电话 | Not Null |
-| **email** | **String** | **邮箱** | - |
-| **address** | **String** | **地址** | - |
-| region | String | 区域 | Not Null |
-| **credit_limit** | **Float** | **信用额度** | **Default: 0** |
-| **is_active** | **Boolean** | **是否启用** | **Default: True** |
+| name | String(200) | 经销商名称 | Unique, Not Null |
+| code | String(50) | 经销商代码 | Unique |
+| contact_person | String(100) | 联系人 | Not Null |
+| phone | String(20) | 电话 | Not Null |
+| email | String(100) | 邮箱 | - |
+| address | String(255) | 地址 | - |
+| region | String(100) | 区域 | Not Null |
+| credit_limit | Decimal(12,2) | 信用额度 | Default: 0 |
+| is_active | Boolean | 是否启用 | Default: True |
 | created_at | DateTime | 创建时间 | Auto |
+| updated_at | DateTime | 更新时间 | Auto |
 
-**新增字段说明**:
-- `code`: 经销商代码，如 "DIST001"
+**字段说明**:
+- `code`: 经销商代码，如 "DIST001", "DIST002"
 - `email`: 电子邮箱
 - `address`: 详细地址
+- `region`: 所属区域（如四川、重庆、云南等）
 - `credit_limit`: 信用额度限制
 - `is_active`: 是否启用该经销商
 
+**索引**: name, code, region
+
 ---
 
-### 8. sales_orders (销售订单表) - **需要优化**
+### 8. sales_orders (销售订单表)
 销售订单信息
 
 | 字段 | 类型 | 说明 | 约束 |
 |------|------|------|------|
 | id | Integer | 主键 | PK, Auto |
-| order_code | String | 订单号 | Unique, Not Null |
+| order_code | String(50) | 订单号 | Unique, Not Null |
 | distributor_id | Integer | 经销商ID | FK, Not Null |
 | product_id | Integer | 产品ID | FK, Not Null |
-| product_name | String | 产品名称 | Not Null |
+| product_name | String(200) | 产品名称 | Not Null |
 | quantity | Integer | 数量 | Not Null |
-| **unit_price** | **Float** | **单价** | **Not Null** |
-| total_value | Float | 总金额 | Not Null |
-| **status** | **String** | **订单状态** | **Default: 'pending'** |
-| **warehouse_id** | **Integer** | **出货仓库** | **FK** |
-| order_date | DateTime | 下单日期 | Not Null |
-| **delivery_date** | **DateTime** | **交货日期** | - |
-| **completed_at** | **DateTime** | **完成时间** | - |
-| **user_id** | **Integer** | **创建人** | **FK** |
-| **notes** | **Text** | **备注** | - |
+| unit_price | Decimal(12,2) | 单价 | Not Null |
+| total_value | Decimal(12,2) | 总金额 | Not Null |
+| status | String(20) | 订单状态 | Default: 'pending' |
+| warehouse_id | Integer | 出货仓库 | FK |
+| order_date | DateTime | 下单日期 | Default: Now |
+| delivery_date | DateTime | 计划交货日期 | - |
+| completed_at | DateTime | 完成时间 | - |
+| user_id | Integer | 创建人 | FK |
+| notes | Text | 备注 | - |
 | created_at | DateTime | 创建时间 | Auto |
 | updated_at | DateTime | 更新时间 | Auto |
 
 **订单状态 (status)**:
 - `pending`: 待处理
 - `processing`: 处理中
+- `shipped`: 已发货
 - `completed`: 已完成
 - `cancelled`: 已取消
-- `shipped`: 已发货
 
-**新增字段说明**:
+**字段说明**:
+- `order_code`: 自动生成订单号，格式 "SO-YYYYMMDD-XXXX"
 - `unit_price`: 单价
+- `total_value`: 总金额 = unit_price * quantity
 - `status`: 订单状态，用于 Dashboard 统计
 - `warehouse_id`: 出货仓库
 - `delivery_date`: 计划交货日期
@@ -218,31 +259,63 @@ Cummins 产品信息
 
 ---
 
-### 9. activity_logs (活动日志表) - **新增**
+### 9. activity_logs (活动日志表)
 统一的活动日志，用于 Dashboard 显示
 
 | 字段 | 类型 | 说明 | 约束 |
 |------|------|------|------|
 | id | Integer | 主键 | PK, Auto |
-| activity_type | String | 活动类型 | Not Null |
-| action | String | 操作描述 | Not Null |
-| item_name | String | 项目名称 | - |
+| activity_type | String(20) | 活动类型 | Not Null |
+| action | String(100) | 操作描述 | Not Null |
+| item_name | String(200) | 项目名称 | Not Null |
 | user_id | Integer | 操作用户 | FK |
 | reference_id | Integer | 关联ID | - |
-| reference_type | String | 关联类型 | - |
+| reference_type | String(50) | 关联类型 | - |
 | created_at | DateTime | 创建时间 | Auto |
 
 **活动类型 (activity_type)**:
-- `inventory`: 库存更新
-- `order`: 订单处理
-- `product`: 产品操作
-- `alert`: 警报
+- `inventory`: 库存操作（入库、出库、调整、调拨）
+- `order`: 订单处理（创建、更新、完成、取消）
+- `product`: 产品操作（添加、更新、停用）
+- `alert`: 系统警报（低库存、缺货）
+
+**字段说明**:
+- `action`: 具体操作，如 "入库", "出库", "创建订单", "更新产品"
+- `item_name`: 相关项目名称
+- `reference_id`: 关联记录的ID
+- `reference_type`: 关联记录的类型，如 "product", "order", "inventory"
+
+**索引**: activity_type, created_at, user_id
 
 **示例数据**:
 ```
-活动类型: inventory, 操作: "库存已更新", 项目: "Cummins 6BT 活塞", 时间: 2分钟前
-活动类型: order, 操作: "订单已处理", 项目: "Order #WH-2024-045", 时间: 15分钟前
+活动类型: inventory, 操作: "入库", 项目: "Cummins 6BT5.9 发动机总成", 时间: 2分钟前
+活动类型: order, 操作: "订单完成", 项目: "订单 SO202411011001", 时间: 15分钟前
+活动类型: alert, 操作: "低库存警报", 项目: "燃油滤清器 - 昆明分仓库", 时间: 1小时前
 ```
+
+---
+
+### 10. warehouse_config (仓库配置表)
+系统全局仓库配置
+
+| 字段 | 类型 | 说明 | 约束 |
+|------|------|------|------|
+| id | Integer | 主键 | PK, Auto |
+| warehouse_name | String(100) | 仓库名称 | Default: '主仓库' |
+| location | String(255) | 仓库位置 | Default: '未设置' |
+| timezone | String(50) | 时区 | Default: 'Asia/Shanghai' |
+| temperature_unit | String(20) | 温度单位 | Default: 'celsius' |
+| low_stock_threshold | Integer | 低库存阈值 | Default: 10 |
+| created_at | DateTime | 创建时间 | Auto |
+| updated_at | DateTime | 更新时间 | Auto |
+
+**字段说明**:
+- `warehouse_name`: 主仓库名称
+- `location`: 仓库所在位置
+- `timezone`: 系统使用的时区设置
+- `temperature_unit`: 温度单位（celsius=摄氏度, fahrenheit=华氏度）
+- `low_stock_threshold`: 全局低库存警报阈值
 
 ---
 
@@ -330,4 +403,18 @@ Distributor (1) ----< (M) SalesOrder
 
 ---
 
-**最后更新**: 2025-11-10
+## 📝 数据迁移状态
+
+所有表结构已完成优化和实施：
+- ✅ 所有VARCHAR字段已添加长度参数（MySQL兼容）
+- ✅ 所有timestamp字段已配置server_default和onupdate
+- ✅ users表已添加avatar_url和language字段
+- ✅ products表已添加image_url字段
+- ✅ product_categories表已添加parent_id、is_active和updated_at字段
+- ✅ inventories表已添加created_at字段
+- ✅ 所有表的updated_at字段已正确配置
+- ✅ warehouse_config表已创建
+
+---
+
+**最后更新**: 2025-11-12
