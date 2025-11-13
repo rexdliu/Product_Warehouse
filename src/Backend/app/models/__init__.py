@@ -9,6 +9,7 @@ from app.models.product import Product, ProductCategory
 from app.models.inventory import Warehouse, Inventory, InventoryTransaction
 from app.models.sales import Distributor, SalesOrder
 from app.models.activity_log import ActivityLog
+from app.models.notification import Notification
 
 __all__ = [
     "User",
@@ -20,4 +21,5 @@ __all__ = [
     "Distributor",
     "SalesOrder",
     "ActivityLog",
+    "Notification",
 ]

@@ -16,7 +16,9 @@ CREATE TABLE IF NOT EXISTS users (
     phone VARCHAR(20),
     full_name VARCHAR(100),
     hashed_password VARCHAR(255) NOT NULL,
-    role VARCHAR(20) DEFAULT 'staff' COMMENT 'staff/manager/admin',
+    role VARCHAR(20) DEFAULT 'staff' COMMENT 'staff/manager/admin/tester',
+    avatar_url VARCHAR(255) COMMENT '用户头像URL',
+    language VARCHAR(10) DEFAULT 'zh-CN' COMMENT '用户界面语言: zh-CN/en-US',
     is_active BOOLEAN DEFAULT TRUE,
     is_superuser BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -54,6 +56,7 @@ CREATE TABLE IF NOT EXISTS products (
     price DECIMAL(12, 2) NOT NULL,
     cost DECIMAL(12, 2),
     unit VARCHAR(20) DEFAULT 'pcs' COMMENT '单位: pcs/box/liter',
+    image_url VARCHAR(255) COMMENT '产品图片URL',
     min_stock_level INT DEFAULT 10 COMMENT '最低库存预警线',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -185,11 +188,54 @@ CREATE TABLE IF NOT EXISTS activity_logs (
     INDEX idx_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='活动日志表';
 
+-- 10. 仓库配置表
+CREATE TABLE IF NOT EXISTS warehouse_config (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    warehouse_name VARCHAR(100) DEFAULT '主仓库' COMMENT '仓库名称',
+    location VARCHAR(255) DEFAULT '未设置' COMMENT '仓库位置',
+    timezone VARCHAR(50) DEFAULT 'Asia/Shanghai' COMMENT '时区',
+    temperature_unit VARCHAR(20) DEFAULT 'celsius' COMMENT '温度单位: celsius/fahrenheit',
+    low_stock_threshold INT DEFAULT 10 COMMENT '低库存阈值',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='仓库配置表';
+
+-- 11. 系统通知表
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL COMMENT '接收者用户ID',
+    title VARCHAR(200) NOT NULL COMMENT '通知标题',
+    message TEXT NOT NULL COMMENT '通知内容',
+    notification_type VARCHAR(50) NOT NULL COMMENT '通知类型: system/inventory_alert/order/approval/message/product/alert',
+    priority VARCHAR(20) DEFAULT 'normal' COMMENT '优先级: low/normal/high/urgent',
+    reference_id INT COMMENT '关联业务记录ID',
+    reference_type VARCHAR(50) COMMENT '关联记录类型: product/order/inventory/user/warehouse/distributor',
+    action_url VARCHAR(255) COMMENT '操作链接（前端路由）',
+    is_read BOOLEAN DEFAULT FALSE COMMENT '是否已读',
+    is_deleted BOOLEAN DEFAULT FALSE COMMENT '软删除标记',
+    read_at TIMESTAMP NULL COMMENT '阅读时间',
+    sender_id INT COMMENT '发送者用户ID（可选）',
+    expire_at TIMESTAMP NULL COMMENT '过期时间',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_user_id (user_id),
+    INDEX idx_notification_type (notification_type),
+    INDEX idx_priority (priority),
+    INDEX idx_is_read (is_read),
+    INDEX idx_is_deleted (is_deleted),
+    INDEX idx_reference (reference_id, reference_type),
+    INDEX idx_created_at (created_at),
+    INDEX idx_expire_at (expire_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统通知表';
+
 -- =============================================
 -- 第二部分: 清空现有数据
 -- =============================================
 
 SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE notifications;
 TRUNCATE TABLE activity_logs;
 TRUNCATE TABLE inventory_transactions;
 TRUNCATE TABLE sales_orders;
@@ -199,6 +245,7 @@ TRUNCATE TABLE warehouses;
 TRUNCATE TABLE products;
 TRUNCATE TABLE product_categories;
 TRUNCATE TABLE users;
+TRUNCATE TABLE warehouse_config;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =============================================
@@ -366,9 +413,34 @@ INSERT INTO activity_logs (activity_type, action, item_name, user_id, reference_
 ('alert', '低库存警报', '燃油滤清器 - 昆明分仓库', 1, 9, 'product', '2024-11-08 08:00:00'),
 ('alert', '缺货警报', '空气滤清器 - 昆明分仓库', 1, 10, 'product', '2024-11-09 08:00:00');
 
---*
-ALTER TABLE products ADD COLUMN image_url VARCHAR(255)
---
+-- 10. 插入仓库配置数据（默认配置）
+INSERT INTO warehouse_config (warehouse_name, location, timezone, temperature_unit, low_stock_threshold) VALUES
+('主仓库', '成都', 'Asia/Shanghai', 'celsius', 10);
+
+-- 11. 插入系统通知数据
+INSERT INTO notifications (user_id, title, message, notification_type, priority, reference_id, reference_type, action_url, is_read, sender_id, expire_at, created_at) VALUES
+-- 管理员的通知
+(1, '紧急库存预警', '空气滤清器在昆明分仓库库存为0，请尽快补货', 'inventory_alert', 'urgent', 10, 'product', '/inventory/product/10', FALSE, NULL, '2024-11-20 00:00:00', '2024-11-09 08:00:00'),
+(1, '低库存提醒', '燃油滤清器在昆明分仓库库存低于最低预警线', 'inventory_alert', 'high', 9, 'product', '/inventory/product/9', FALSE, NULL, '2024-11-21 00:00:00', '2024-11-08 08:00:00'),
+(1, '新订单通知', '收到新订单 SO202411101010，请及时处理', 'order', 'normal', 10, 'order', '/orders/10', TRUE, NULL, '2024-11-22 00:00:00', '2024-11-09 09:15:00'),
+(1, '订单已完成', '订单 SO202411011001 已完成发货', 'order', 'normal', 1, 'order', '/orders/1', TRUE, 2, '2024-11-19 00:00:00', '2024-11-05 10:00:00'),
+(1, '系统维护通知', '系统将在今晚22:00-23:00进行例行维护，请提前保存工作', 'system', 'high', NULL, NULL, NULL, FALSE, NULL, '2024-11-13 23:00:00', '2024-11-13 10:00:00'),
+
+-- 仓库经理的通知
+(2, '库存调整完成', '燃油滤清器盘点调整已完成，实际库存与账面有差异', 'inventory_alert', 'normal', 9, 'product', '/inventory/product/9', TRUE, 1, '2024-11-19 00:00:00', '2024-11-05 16:00:00'),
+(2, '订单待发货', '订单 SO202411051005 已处理，等待发货', 'order', 'normal', 5, 'order', '/orders/5', FALSE, NULL, '2024-11-20 00:00:00', '2024-11-09 08:30:00'),
+(2, '产品信息更新', '机油滤清器的产品信息已更新', 'product', 'low', 8, 'product', '/products/8', TRUE, 1, '2024-11-18 00:00:00', '2024-11-04 10:15:00'),
+(2, '调拨通知', 'Cummins 专用机油 10W-30 从成都调拨至重庆，请确认接收', 'inventory_alert', 'normal', 7, 'product', '/inventory/transfer/1', TRUE, 1, '2024-11-21 00:00:00', '2024-11-07 11:00:00'),
+
+-- 员工的通知
+(3, '入库任务', '新到货的发动机已到达，请及时办理入库手续', 'inventory_alert', 'normal', 1, 'product', '/inventory/receive', FALSE, 2, '2024-11-15 00:00:00', '2024-11-01 09:00:00'),
+(3, '出库通知', '订单 SO202411021002 需要出库，请准备货物', 'order', 'normal', 2, 'order', '/orders/2', TRUE, 2, '2024-11-19 00:00:00', '2024-11-05 11:00:00'),
+(3, '盘点提醒', '本周四需要对滤芯类产品进行盘点，请做好准备', 'message', 'normal', NULL, NULL, NULL, FALSE, 2, '2024-11-14 00:00:00', '2024-11-11 09:00:00'),
+
+-- 测试账号的通知
+(4, '欢迎使用系统', '欢迎使用 Cummins 零件仓库管理系统！如有问题请联系管理员', 'system', 'normal', NULL, NULL, '/help', FALSE, NULL, '2024-11-27 00:00:00', '2024-11-10 08:00:00'),
+(4, '测试通知 - 已读', '这是一条已读的测试通知', 'message', 'low', NULL, NULL, NULL, TRUE, 1, '2024-11-20 00:00:00', '2024-11-09 10:00:00');
+
 -- =============================================
 -- 完成提示
 -- =============================================
