@@ -9,14 +9,18 @@ class NotificationBase(BaseModel):
     """通知基础模型"""
     title: str
     message: str
-    notification_type: str  # order, inventory, alert, product, system
+    notification_type: str  # system, inventory_alert, order, approval, message, product, alert
+    priority: str = "normal"  # low, normal, high, urgent
     reference_id: Optional[int] = None
     reference_type: Optional[str] = None
+    action_url: Optional[str] = None
 
 
 class NotificationCreate(NotificationBase):
     """创建通知模型"""
     user_id: int
+    sender_id: Optional[int] = None
+    expire_at: Optional[datetime] = None
 
 
 class NotificationUpdate(BaseModel):
@@ -28,9 +32,13 @@ class NotificationInDB(NotificationBase):
     """通知数据库模型"""
     id: int
     user_id: int
+    sender_id: Optional[int] = None
     is_read: bool
+    is_deleted: bool
+    read_at: Optional[datetime] = None
+    expire_at: Optional[datetime] = None  # 单数形式，匹配数据库
     created_at: datetime
-    expires_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
