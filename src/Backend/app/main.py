@@ -7,11 +7,14 @@ WarehouseAI 后端主应用入口文件
 2. 配置 CORS 中间件以支持跨域请求
 3. 注册 API 路由
 4. 提供健康检查端点
+5. 配置静态文件服务（用于头像等资源）
 """
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from .api.v1 import api_router
 from app.core.config import settings
 from app.core.database import Base, engine
@@ -20,6 +23,7 @@ from app.models import user as user_models  # noqa: F401
 from app.models import product as product_models  # noqa: F401
 from app.models import inventory as inventory_models  # noqa: F401
 from app.models import sales as sales_models  # noqa: F401
+from app.models import notification as notification_models  # noqa: F401
 import os
 
 app = FastAPI(
@@ -39,6 +43,15 @@ app.add_middleware(
 
 # 包含API路由
 app.include_router(api_router, prefix="/api/v1")
+
+# 配置静态文件服务
+# 获取static目录的绝对路径
+static_dir = Path(__file__).parent / "static"
+static_dir.mkdir(exist_ok=True)  # 确保static目录存在
+(static_dir / "avatars").mkdir(exist_ok=True)  # 确保avatars子目录存在
+
+# 挂载静态文件服务
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 @app.get("/")
 async def root():
@@ -74,8 +87,23 @@ def on_startup() -> None:
     """应用启动时初始化数据库表（本地开发）。
 
     未连接外部数据库时，使用 SQLite 自动建表，方便前端联调。
+    同时启动后台任务调度器。
     """
     Base.metadata.create_all(bind=engine)
+
+    # 启动后台任务调度器
+    from app.core.scheduler import start_scheduler
+    start_scheduler()
+
+
+@app.on_event("shutdown")
+def on_shutdown() -> None:
+    """应用关闭时清理资源。
+
+    关闭后台任务调度器。
+    """
+    from app.core.scheduler import shutdown_scheduler
+    shutdown_scheduler()
 
 if __name__ == "__main__":
     import uvicorn

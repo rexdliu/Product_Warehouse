@@ -6,10 +6,11 @@ import { useAuthStore } from '@/stores';
  * 角色权限说明:
  * - admin: 完整权限 (所有功能)
  * - manager: 仓库管理员权限 (管理订单和库存)
+ * - tester: 测试员权限 (与manager相同权限)
  * - staff: 员工权限 (只读访问)
  */
 
-export type Role = 'admin' | 'manager' | 'staff';
+export type Role = 'admin' | 'manager' | 'staff' | 'tester';
 
 export const usePermissions = () => {
   const user = useAuthStore((state) => state.user);
@@ -21,14 +22,14 @@ export const usePermissions = () => {
   const isAdmin = userRole === 'admin';
 
   /**
-   * 检查是否有仓库管理员或更高权限
+   * 检查是否有仓库管理员或更高权限（包含tester）
    */
-  const isManagerOrAbove = userRole === 'admin' || userRole === 'manager';
+  const isManagerOrAbove = userRole === 'admin' || userRole === 'manager' || userRole === 'tester';
 
   /**
    * 检查是否有员工或更高权限（即任何已认证用户）
    */
-  const isStaffOrAbove = userRole === 'admin' || userRole === 'manager' || userRole === 'staff';
+  const isStaffOrAbove = userRole === 'admin' || userRole === 'manager' || userRole === 'staff' || userRole === 'tester';
 
   /**
    * 检查是否可以编辑数据（manager 和 admin）

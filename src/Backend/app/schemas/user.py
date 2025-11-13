@@ -11,7 +11,7 @@
 6. 登录和令牌相关模型
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, Dict, Any
 from datetime import datetime
 
@@ -41,6 +41,15 @@ class UserUpdate(BaseModel):
     is_active: Optional[bool] = None
     is_superuser: Optional[bool] = None
 
+# 用户个人资料更新模型（用于 PUT /users/me）
+class UserProfileUpdate(BaseModel):
+    """用户个人资料更新模型 - 允许所有用户更新自己的信息"""
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(None, max_length=20)
+    full_name: Optional[str] = Field(None, max_length=100)
+    language: Optional[str] = Field(None, pattern="^(zh-CN|en-US)$")
+
 # 数据库用户模型
 class UserInDB(UserBase):
     """数据库用户模型，包含从数据库中获取的用户信息"""
@@ -48,6 +57,8 @@ class UserInDB(UserBase):
     role: str
     is_active: bool
     is_superuser: bool
+    avatar_url: Optional[str] = None
+    language: Optional[str] = "zh-CN"
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -58,7 +69,17 @@ class UserInDB(UserBase):
 class UserPasswordUpdate(BaseModel):
     """用户密码更新模型"""
     current_password: str
-    new_password: str
+    new_password: str = Field(..., min_length=8, description="新密码至少8位")
+
+# 头像上传响应模型
+class AvatarUploadResponse(BaseModel):
+    """头像上传响应模型"""
+    avatar_url: str
+
+# 修改密码响应模型
+class PasswordChangeResponse(BaseModel):
+    """修改密码响应模型"""
+    message: str
 class UserSettings(BaseModel):
     """用户设置模型"""
     theme: str

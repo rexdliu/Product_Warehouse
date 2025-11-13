@@ -228,9 +228,102 @@ export interface UserResponse {
   id: number;
   username: string;
   email: string;
+  phone?: string;
   full_name?: string;
   role: string;
+  avatar_url?: string;
+  language?: string;
   is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface UserProfileUpdate {
+  username?: string;
+  email?: string;
+  phone?: string;
+  full_name?: string;
+  language?: string;
+}
+
+export interface PasswordChangeRequest {
+  current_password: string;
+  new_password: string;
+}
+
+export interface WarehouseConfig {
+  id: number;
+  warehouse_name: string;
+  location: string;
+  timezone: string;
+  temperature_unit: string;
+  low_stock_threshold: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WarehouseConfigUpdate {
+  warehouse_name?: string;
+  location?: string;
+  timezone?: string;
+  temperature_unit?: string;
+  low_stock_threshold?: number;
+}
+
+export interface ProductCreateRequest {
+  name: string;
+  sku: string;
+  description?: string;
+  part_number?: string;
+  engine_model?: string;
+  manufacturer?: string;
+  category_id: number;
+  price: number;
+  cost?: number;
+  unit?: string;
+  min_stock_level?: number;
+  image_url?: string;
+  is_active?: boolean;
+}
+
+export interface OrderCreateRequest {
+  distributor_id: number;
+  product_id: number;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total_value: number;
+  order_date: string;
+  delivery_date?: string;
+  warehouse_id?: number;
+  notes?: string;
+}
+
+// Notification API 类型定义
+export interface NotificationResponse {
+  id: number;
+  user_id: number;
+  title: string;
+  message: string;
+  notification_type: string;
+  reference_id?: number;
+  reference_type?: string;
+  is_read: boolean;
+  created_at: string;
+  expires_at: string;
+}
+
+export interface UnreadCountResponse {
+  unread_count: number;
+}
+
+// Search API 类型定义
+export interface SearchResult {
+  type: string;
+  id: number;
+  title: string;
+  subtitle: string;
+  url: string;
 }
 
 class ApiService {
@@ -301,6 +394,101 @@ class ApiService {
     }));
   }
 
+  async createProduct(data: ProductCreateRequest): Promise<Product> {
+    const requestBody: Record<string, any> = {
+      name: data.name,
+      sku: data.sku,
+      category_id: data.category_id,
+      price: data.price,
+    };
+
+    if (data.description !== undefined) requestBody.description = data.description;
+    if (data.part_number !== undefined) requestBody.part_number = data.part_number;
+    if (data.engine_model !== undefined) requestBody.engine_model = data.engine_model;
+    if (data.manufacturer !== undefined) requestBody.manufacturer = data.manufacturer;
+    if (data.cost !== undefined) requestBody.cost = data.cost;
+    if (data.unit !== undefined) requestBody.unit = data.unit;
+    if (data.min_stock_level !== undefined) requestBody.min_stock_level = data.min_stock_level;
+    if (data.image_url !== undefined) requestBody.image_url = data.image_url;
+    if (data.is_active !== undefined) requestBody.is_active = data.is_active;
+
+    const result = await this.request<ProductDTO>('/api/v1/products/', {
+      method: 'POST',
+      body: JSON.stringify(requestBody),
+    });
+
+    return {
+      id: result.id,
+      name: result.name,
+      sku: result.sku,
+      description: result.description,
+      price: result.price,
+      cost: result.cost,
+      categoryId: result.category_id,
+      imageUrl: result.image_url,
+      isActive: result.is_active,
+      createdAt: result.created_at,
+      updatedAt: result.updated_at,
+    };
+  }
+
+  async updateProduct(productId: number, data: Partial<ProductCreateRequest>): Promise<Product> {
+    const requestBody: Record<string, any> = {};
+
+    if (data.name !== undefined) requestBody.name = data.name;
+    if (data.sku !== undefined) requestBody.sku = data.sku;
+    if (data.description !== undefined) requestBody.description = data.description;
+    if (data.part_number !== undefined) requestBody.part_number = data.part_number;
+    if (data.engine_model !== undefined) requestBody.engine_model = data.engine_model;
+    if (data.manufacturer !== undefined) requestBody.manufacturer = data.manufacturer;
+    if (data.category_id !== undefined) requestBody.category_id = data.category_id;
+    if (data.price !== undefined) requestBody.price = data.price;
+    if (data.cost !== undefined) requestBody.cost = data.cost;
+    if (data.unit !== undefined) requestBody.unit = data.unit;
+    if (data.min_stock_level !== undefined) requestBody.min_stock_level = data.min_stock_level;
+    if (data.image_url !== undefined) requestBody.image_url = data.image_url;
+    if (data.is_active !== undefined) requestBody.is_active = data.is_active;
+
+    const result = await this.request<ProductDTO>(`/api/v1/products/${productId}`, {
+      method: 'PUT',
+      body: JSON.stringify(requestBody),
+    });
+
+    return {
+      id: result.id,
+      name: result.name,
+      sku: result.sku,
+      description: result.description,
+      price: result.price,
+      cost: result.cost,
+      categoryId: result.category_id,
+      imageUrl: result.image_url,
+      isActive: result.is_active,
+      createdAt: result.created_at,
+      updatedAt: result.updated_at,
+    };
+  }
+
+  async deleteProduct(productId: number): Promise<Product> {
+    const result = await this.request<ProductDTO>(`/api/v1/products/${productId}`, {
+      method: 'DELETE',
+    });
+
+    return {
+      id: result.id,
+      name: result.name,
+      sku: result.sku,
+      description: result.description,
+      price: result.price,
+      cost: result.cost,
+      categoryId: result.category_id,
+      imageUrl: result.image_url,
+      isActive: result.is_active,
+      createdAt: result.created_at,
+      updatedAt: result.updated_at,
+    };
+  }
+
   async getInventoryItems(): Promise<InventoryItem[]> {
     const data = await this.request<InventoryDTO[]>('/api/v1/inventory/items');
     return data.map((item) => ({
@@ -346,6 +534,46 @@ class ApiService {
       createdAt: item.created_at,
       updatedAt: item.updated_at,
     }));
+  }
+
+  async createOrder(data: OrderCreateRequest): Promise<SalesOrder> {
+    const requestBody: Record<string, any> = {
+      distributor_id: data.distributor_id,
+      product_id: data.product_id,
+      product_name: data.product_name,
+      quantity: data.quantity,
+      unit_price: data.unit_price,
+      total_value: data.total_value,
+      order_date: data.order_date,
+    };
+
+    if (data.delivery_date !== undefined) requestBody.delivery_date = data.delivery_date;
+    if (data.warehouse_id !== undefined) requestBody.warehouse_id = data.warehouse_id;
+    if (data.notes !== undefined) requestBody.notes = data.notes;
+
+    const result = await this.request<SalesOrderDTO>('/api/v1/sales/orders', {
+      method: 'POST',
+      body: JSON.stringify(requestBody),
+    });
+
+    return {
+      id: result.id,
+      orderCode: result.order_code,
+      distributorId: result.distributor_id,
+      productId: result.product_id,
+      productName: result.product_name,
+      quantity: result.quantity,
+      totalValue: result.total_value,
+      orderDate: result.order_date,
+      status: result.status,
+      warehouseId: result.warehouse_id,
+      deliveryDate: result.delivery_date,
+      completedAt: result.completed_at,
+      userId: result.user_id,
+      notes: result.notes,
+      createdAt: result.created_at,
+      updatedAt: result.updated_at,
+    };
   }
 
   async queryRag(question: string, topK = 3): Promise<RAGQueryResponse> {
@@ -460,6 +688,61 @@ class ApiService {
     return this.request<UserResponse>('/api/v1/users/me');
   }
 
+  async updateUserProfile(data: UserProfileUpdate): Promise<UserResponse> {
+    return this.request<UserResponse>('/api/v1/users/me', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async uploadAvatar(file: File): Promise<{ avatar_url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = this.getToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch('/api/v1/users/me/avatar', {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(`Upload failed (${response.status}): ${detail || response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  async changePassword(data: PasswordChangeRequest): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/api/v1/users/me/change-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAvatar(): Promise<{ message: string; avatar_url: null }> {
+    return this.request<{ message: string; avatar_url: null }>('/api/v1/users/me/avatar', {
+      method: 'DELETE',
+    });
+  }
+
+  async getWarehouseConfig(): Promise<WarehouseConfig> {
+    return this.request<WarehouseConfig>('/api/v1/warehouse/config');
+  }
+
+  async updateWarehouseConfig(data: WarehouseConfigUpdate): Promise<WarehouseConfig> {
+    return this.request<WarehouseConfig>('/api/v1/warehouse/config', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   logout() {
     this.clearToken();
   }
@@ -541,6 +824,47 @@ class ApiService {
 
   async getWarehouses(): Promise<Array<{id: number, name: string, location?: string}>> {
     return this.request<Array<{id: number, name: string, location?: string}>>('/api/v1/inventory/warehouses');
+  }
+
+  // Notification methods
+  async getNotifications(skip = 0, limit = 50, unreadOnly = false): Promise<NotificationResponse[]> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+      unread_only: unreadOnly.toString(),
+    });
+    return this.request<NotificationResponse[]>(`/api/v1/notifications/?${params}`);
+  }
+
+  async getUnreadNotificationCount(): Promise<UnreadCountResponse> {
+    return this.request<UnreadCountResponse>('/api/v1/notifications/unread-count');
+  }
+
+  async markNotificationAsRead(notificationId: number): Promise<NotificationResponse> {
+    return this.request<NotificationResponse>(`/api/v1/notifications/${notificationId}/read`, {
+      method: 'PUT',
+    });
+  }
+
+  async markAllNotificationsAsRead(): Promise<{ message: string; count: number }> {
+    return this.request<{ message: string; count: number }>('/api/v1/notifications/read-all', {
+      method: 'PUT',
+    });
+  }
+
+  async deleteNotification(notificationId: number): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/v1/notifications/${notificationId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Search methods
+  async globalSearch(query: string, limit = 20): Promise<SearchResult[]> {
+    const params = new URLSearchParams({
+      q: query,
+      limit: limit.toString(),
+    });
+    return this.request<SearchResult[]>(`/api/v1/search/?${params}`);
   }
 }
 

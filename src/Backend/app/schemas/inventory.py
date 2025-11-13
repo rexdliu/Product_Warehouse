@@ -53,7 +53,7 @@ class InventoryBase(BaseModel):
 # 创建库存模型
 class InventoryCreate(InventoryBase):
     """创建库存模型"""
-    pass
+    location_code: Optional[str] = None
 
 # 更新库存模型
 class InventoryUpdate(BaseModel):

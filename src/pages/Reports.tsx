@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Brain, Lightbulb, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { apiService, RAGQueryResponse } from '@/services/api';
-
 // 组件：AI 洞察卡片
 const AIInsightCard = ({ title, message }: { title: string, message: string }) => (
   <Card className="bg-primary/5 border-primary/20">

@@ -32,7 +32,6 @@ const navigation = [
 export const AppSidebar: React.FC = () => {
   const { sidebarOpen, toggleSidebar } = useUIStore();
   const location = useLocation();
-
   return (
     <div className={cn(
       "fixed left-0 top-0 z-50 h-full bg-card border-r border-border transition-all duration-300",

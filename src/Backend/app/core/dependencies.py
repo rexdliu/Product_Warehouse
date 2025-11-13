@@ -132,7 +132,7 @@ async def require_manager_or_above(
     current_user: User = Depends(get_current_active_user)
 ) -> User:
     """
-    要求管理员或仓库管理员权限
+    要求管理员、仓库管理员或测试员权限
 
     Args:
         current_user: 当前活跃用户依赖项
@@ -141,12 +141,12 @@ async def require_manager_or_above(
         User: 当前用户对象
 
     Raises:
-        HTTPException: 如果用户不是 admin 或 manager 角色
+        HTTPException: 如果用户不是 admin、manager 或 tester 角色
     """
-    if current_user.role not in ["admin", "manager"]:  # type: ignore[comparison-overlap]
+    if current_user.role not in ["admin", "manager", "tester"]:  # type: ignore[comparison-overlap]
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="需要管理员或仓库管理员权限"
+            detail="需要管理员、仓库管理员或测试员权限"
         )
     return current_user
 
@@ -163,9 +163,9 @@ async def require_staff_or_above(
         User: 当前用户对象
 
     Raises:
-        HTTPException: 如果用户不是 admin、manager 或 staff 角色
+        HTTPException: 如果用户不是 admin、manager、tester 或 staff 角色
     """
-    if current_user.role not in ["admin", "manager", "staff"]:  # type: ignore[comparison-overlap]
+    if current_user.role not in ["admin", "manager", "staff", "tester"]:  # type: ignore[comparison-overlap]
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="需要有效的用户角色"

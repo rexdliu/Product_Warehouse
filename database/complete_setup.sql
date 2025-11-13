@@ -16,7 +16,9 @@ CREATE TABLE IF NOT EXISTS users (
     phone VARCHAR(20),
     full_name VARCHAR(100),
     hashed_password VARCHAR(255) NOT NULL,
-    role VARCHAR(20) DEFAULT 'staff' COMMENT 'staff/manager/admin',
+    role VARCHAR(20) DEFAULT 'staff' COMMENT 'staff/manager/admin/tester',
+    avatar_url VARCHAR(255) COMMENT '用户头像URL',
+    language VARCHAR(10) DEFAULT 'zh-CN' COMMENT '用户界面语言: zh-CN/en-US',
     is_active BOOLEAN DEFAULT TRUE,
     is_superuser BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -54,6 +56,7 @@ CREATE TABLE IF NOT EXISTS products (
     price DECIMAL(12, 2) NOT NULL,
     cost DECIMAL(12, 2),
     unit VARCHAR(20) DEFAULT 'pcs' COMMENT '单位: pcs/box/liter',
+    image_url VARCHAR(255) COMMENT '产品图片URL',
     min_stock_level INT DEFAULT 10 COMMENT '最低库存预警线',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -185,6 +188,18 @@ CREATE TABLE IF NOT EXISTS activity_logs (
     INDEX idx_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='活动日志表';
 
+-- 10. 仓库配置表
+CREATE TABLE IF NOT EXISTS warehouse_config (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    warehouse_name VARCHAR(100) DEFAULT '主仓库' COMMENT '仓库名称',
+    location VARCHAR(255) DEFAULT '未设置' COMMENT '仓库位置',
+    timezone VARCHAR(50) DEFAULT 'Asia/Shanghai' COMMENT '时区',
+    temperature_unit VARCHAR(20) DEFAULT 'celsius' COMMENT '温度单位: celsius/fahrenheit',
+    low_stock_threshold INT DEFAULT 10 COMMENT '低库存阈值',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='仓库配置表';
+
 -- =============================================
 -- 第二部分: 清空现有数据
 -- =============================================
@@ -199,6 +214,7 @@ TRUNCATE TABLE warehouses;
 TRUNCATE TABLE products;
 TRUNCATE TABLE product_categories;
 TRUNCATE TABLE users;
+TRUNCATE TABLE warehouse_config;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =============================================
@@ -366,9 +382,9 @@ INSERT INTO activity_logs (activity_type, action, item_name, user_id, reference_
 ('alert', '低库存警报', '燃油滤清器 - 昆明分仓库', 1, 9, 'product', '2024-11-08 08:00:00'),
 ('alert', '缺货警报', '空气滤清器 - 昆明分仓库', 1, 10, 'product', '2024-11-09 08:00:00');
 
---*
-ALTER TABLE products ADD COLUMN image_url VARCHAR(255)
---
+-- 10. 插入仓库配置数据（默认配置）
+INSERT INTO warehouse_config (warehouse_name, location, timezone, temperature_unit, low_stock_threshold) VALUES
+('主仓库', '成都', 'Asia/Shanghai', 'celsius', 10);
 -- =============================================
 -- 完成提示
 -- =============================================
