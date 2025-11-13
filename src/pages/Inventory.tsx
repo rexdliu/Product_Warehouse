@@ -17,7 +17,6 @@ import { User, DollarSign, Package, Calendar as CalendarIcon, Phone, Boxes,  } f
 import { SalesHistoryFilter } from '@/components/inventory/SalesHistoryFilter';
 import type { DateRange } from 'react-day-picker';
 import { startOfDay, endOfDay, isWithinInterval } from 'date-fns';
-
 // 组件：经销商详情卡片
 const DistributorDetails = ({ distributor }: { distributor: Distributor | null }) => {
   if (!distributor) return null;

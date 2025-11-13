@@ -39,7 +39,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {useUIStore, useAuthStore} from "@/stores";
 import { apiService, UserResponse, WarehouseConfig as WarehouseConfigType } from '@/services/api';
-
 const Settings = () => {
   const {
     theme: globalTheme,

@@ -4,7 +4,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { apiService, RAGQueryResponse } from '@/services/api';
 
 const DEFAULT_PROMPT = '请根据仓库知识库总结库存优化与服务协同的重点建议。';
-
 const Analytics: React.FC = () => {
   const [result, setResult] = useState<RAGQueryResponse | null>(null);
   const [loading, setLoading] = useState(false);

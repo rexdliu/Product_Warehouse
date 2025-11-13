@@ -64,7 +64,6 @@ export const CreateProductDialog = () => {
     mutationFn: async (data: ProductCreateRequest) => {
       // 1. 先创建产品
       const product = await apiService.createProduct(data);
-
       // 2. 如果有图片文件，上传图片
       if (imageFile) {
         try {

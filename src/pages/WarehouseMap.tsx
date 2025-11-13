@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
 // 这是一个概念性的组件，实际实现需要引入高德或谷歌地图的SDK
 const WarehouseMapPage: React.FC = () => {
   const [mapProvider, setMapProvider] = useState('gaode'); // 'gaode' or 'google'

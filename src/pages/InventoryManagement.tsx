@@ -22,7 +22,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Warehouse, RefreshCw, Filter, AlertTriangle, Package, Search } from 'lucide-react';
 import { CreateProductDialog } from '@/components/products/CreateProductDialog';
-
 interface InventoryWithDetails extends InventoryItem {
   productName?: string;
   productSku?: string;
