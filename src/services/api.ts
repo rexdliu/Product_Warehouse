@@ -299,6 +299,33 @@ export interface OrderCreateRequest {
   notes?: string;
 }
 
+// Notification API 类型定义
+export interface NotificationResponse {
+  id: number;
+  user_id: number;
+  title: string;
+  message: string;
+  notification_type: string;
+  reference_id?: number;
+  reference_type?: string;
+  is_read: boolean;
+  created_at: string;
+  expires_at: string;
+}
+
+export interface UnreadCountResponse {
+  unread_count: number;
+}
+
+// Search API 类型定义
+export interface SearchResult {
+  type: string;
+  id: number;
+  title: string;
+  subtitle: string;
+  url: string;
+}
+
 class ApiService {
   private token: string | null = null;
 
@@ -797,6 +824,47 @@ class ApiService {
 
   async getWarehouses(): Promise<Array<{id: number, name: string, location?: string}>> {
     return this.request<Array<{id: number, name: string, location?: string}>>('/api/v1/inventory/warehouses');
+  }
+
+  // Notification methods
+  async getNotifications(skip = 0, limit = 50, unreadOnly = false): Promise<NotificationResponse[]> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+      unread_only: unreadOnly.toString(),
+    });
+    return this.request<NotificationResponse[]>(`/api/v1/notifications/?${params}`);
+  }
+
+  async getUnreadNotificationCount(): Promise<UnreadCountResponse> {
+    return this.request<UnreadCountResponse>('/api/v1/notifications/unread-count');
+  }
+
+  async markNotificationAsRead(notificationId: number): Promise<NotificationResponse> {
+    return this.request<NotificationResponse>(`/api/v1/notifications/${notificationId}/read`, {
+      method: 'PUT',
+    });
+  }
+
+  async markAllNotificationsAsRead(): Promise<{ message: string; count: number }> {
+    return this.request<{ message: string; count: number }>('/api/v1/notifications/read-all', {
+      method: 'PUT',
+    });
+  }
+
+  async deleteNotification(notificationId: number): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/v1/notifications/${notificationId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Search methods
+  async globalSearch(query: string, limit = 20): Promise<SearchResult[]> {
+    const params = new URLSearchParams({
+      q: query,
+      limit: limit.toString(),
+    });
+    return this.request<SearchResult[]>(`/api/v1/search/?${params}`);
   }
 }
 

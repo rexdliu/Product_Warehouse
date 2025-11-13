@@ -230,9 +230,9 @@ const Settings = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 文件大小限制（2MB）
-    if (file.size > 2 * 1024 * 1024) {
-      showToast('图片大小不能超过 2MB', 'error');
+    // 文件大小限制（5MB）
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('图片大小不能超过 5MB', 'error');
       return;
     }
 
@@ -424,7 +424,7 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+          <TabsList className="grid grid-cols-6 w-full max-w-3xl">
             <TabsTrigger value="profile" className="gap-2">
               <User className="w-4 h-4" />
               <span className="hidden lg:inline">个人资料</span>
@@ -432,6 +432,10 @@ const Settings = () => {
             <TabsTrigger value="warehouse" className="gap-2">
               <Building2 className="w-4 h-4" />
               <span className="hidden lg:inline">仓库</span>
+            </TabsTrigger>
+            <TabsTrigger value="ai" className="gap-2">
+              <Brain className="w-4 h-4" />
+              <span className="hidden lg:inline">AI助手</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="gap-2">
               <Bell className="w-4 h-4" />
@@ -496,7 +500,7 @@ const Settings = () => {
                         disabled={uploadingAvatar}
                       />
                       <span className="text-sm text-muted-foreground">
-                        支持 PNG / JPG / WEBP，最大 2MB
+                        支持 PNG / JPG / WEBP，最大 5MB
                       </span>
                     </div>
                   </div>
@@ -678,6 +682,42 @@ const Settings = () => {
                     </div>
                   </>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* AI助手 */}
+          <TabsContent value="ai" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>AI助手设置</CardTitle>
+                <CardDescription>配置智能助手的行为与偏好</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-lg border">
+                    <div className="flex items-center gap-3">
+                      <Brain className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <Label className="text-base">启用AI助手</Label>
+                        <p className="text-sm text-muted-foreground">开启/关闭智能助手功能</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={aiSettings.enabled}
+                      onCheckedChange={() => handleAIToggle('enabled')}
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    更多AI功能（自动建议、语音输入、上下文记忆等）正在开发中，敬请期待
+                  </AlertDescription>
+                </Alert>
               </CardContent>
             </Card>
           </TabsContent>

@@ -20,7 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Warehouse, RefreshCw, Filter, AlertTriangle, Package } from 'lucide-react';
+import { Warehouse, RefreshCw, Filter, AlertTriangle, Package, Search } from 'lucide-react';
 import { CreateProductDialog } from '@/components/products/CreateProductDialog';
 
 interface InventoryWithDetails extends InventoryItem {
@@ -39,6 +39,7 @@ const InventoryManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [warehouseFilter, setWarehouseFilter] = useState<string>('all');
   const [stockFilter, setStockFilter] = useState<string>('all'); // all, low, out
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedItem, setSelectedItem] = useState<InventoryWithDetails | null>(null);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [newQuantity, setNewQuantity] = useState<number>(0);
@@ -67,8 +68,17 @@ const InventoryManagement: React.FC = () => {
       filtered = filtered.filter(item => item.quantity === 0);
     }
 
+    // 搜索筛选（SKU和产品名称）
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(item =>
+        (item.productSku && item.productSku.toLowerCase().includes(query)) ||
+        (item.productName && item.productName.toLowerCase().includes(query))
+      );
+    }
+
     setFilteredInventory(filtered);
-  }, [warehouseFilter, stockFilter, inventory]);
+  }, [warehouseFilter, stockFilter, searchQuery, inventory]);
 
   const loadData = async () => {
     try {
@@ -204,35 +214,46 @@ const InventoryManagement: React.FC = () => {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4">
             <CardTitle>库存列表</CardTitle>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
+            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="搜索SKU或产品名称..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder="筛选仓库" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">全部仓库</SelectItem>
+                      {warehouses.map(warehouse => (
+                        <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                          {warehouse.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Select value={stockFilter} onValueChange={setStockFilter}>
                   <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="筛选仓库" />
+                    <SelectValue placeholder="库存状态" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部仓库</SelectItem>
-                    {warehouses.map(warehouse => (
-                      <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
-                        {warehouse.name}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="all">全部状态</SelectItem>
+                    <SelectItem value="low">低库存</SelectItem>
+                    <SelectItem value="out">缺货</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Select value={stockFilter} onValueChange={setStockFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="库存状态" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部状态</SelectItem>
-                  <SelectItem value="low">低库存</SelectItem>
-                  <SelectItem value="out">缺货</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
         </CardHeader>
