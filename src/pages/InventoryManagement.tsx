@@ -20,7 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Warehouse, RefreshCw, Filter, AlertTriangle, Package, Search } from 'lucide-react';
+import { Warehouse, RefreshCw, Filter, AlertTriangle, Package, Search, Image as ImageIcon } from 'lucide-react';
 import { CreateProductDialog } from '@/components/products/CreateProductDialog';
 interface InventoryWithDetails extends InventoryItem {
   productName?: string;
@@ -43,6 +43,10 @@ const InventoryManagement: React.FC = () => {
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [newQuantity, setNewQuantity] = useState<number>(0);
   const [updating, setUpdating] = useState(false);
+
+  // 图片预览状态
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [selectedProductForImage, setSelectedProductForImage] = useState<Product | null>(null);
 
   useEffect(() => {
     loadData();
@@ -135,6 +139,15 @@ const InventoryManagement: React.FC = () => {
     setSelectedItem(item);
     setNewQuantity(item.quantity);
     setUpdateDialogOpen(true);
+  };
+
+  // 处理点击SKU查看产品图片
+  const handleSkuClick = (productId: number) => {
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      setSelectedProductForImage(product);
+      setImagePreviewOpen(true);
+    }
   };
 
   const getStockStatus = (item: InventoryWithDetails) => {
@@ -285,7 +298,15 @@ const InventoryManagement: React.FC = () => {
                 {filteredInventory.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.productName || '-'}</TableCell>
-                    <TableCell>{item.productSku || '-'}</TableCell>
+                    <TableCell>
+                      <button
+                        onClick={() => handleSkuClick(item.productId)}
+                        className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 transition-colors"
+                      >
+                        <ImageIcon className="w-3 h-3" />
+                        {item.productSku || '-'}
+                      </button>
+                    </TableCell>
                     <TableCell>{item.warehouseName || '-'}</TableCell>
                     <TableCell>{item.quantity}</TableCell>
                     <TableCell>{item.reservedQuantity}</TableCell>
@@ -403,6 +424,83 @@ const InventoryManagement: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* 产品图片预览对话框 */}
+      <Dialog open={imagePreviewOpen} onOpenChange={setImagePreviewOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{selectedProductForImage?.name || '产品图片'}</DialogTitle>
+            <DialogDescription>
+              {selectedProductForImage?.sku && `SKU: ${selectedProductForImage.sku}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedProductForImage?.imageUrl ? (
+              <div className="relative w-full flex justify-center">
+                <img
+                  src={selectedProductForImage.imageUrl}
+                  alt={selectedProductForImage.name}
+                  className="max-w-full max-h-[500px] object-contain rounded-lg border"
+                  onError={(e) => {
+                    // 图片加载失败时显示占位符
+                    (e.target as HTMLImageElement).style.display = 'none';
+                    const parent = (e.target as HTMLElement).parentElement;
+                    if (parent) {
+                      parent.innerHTML = `
+                        <div class="flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg bg-muted">
+                          <svg class="w-16 h-16 text-muted-foreground mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <p class="text-muted-foreground">图片加载失败</p>
+                        </div>
+                      `;
+                    }
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg bg-muted">
+                <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">该产品暂无图片</p>
+              </div>
+            )}
+
+            {/* 产品详细信息 */}
+            {selectedProductForImage && (
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+                <div>
+                  <p className="text-sm text-muted-foreground">产品名称</p>
+                  <p className="font-medium">{selectedProductForImage.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">SKU</p>
+                  <p className="font-medium">{selectedProductForImage.sku}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">售价</p>
+                  <p className="font-medium">${selectedProductForImage.price.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">状态</p>
+                  <p className="font-medium">
+                    {selectedProductForImage.isActive ? (
+                      <Badge className="bg-green-500">启用</Badge>
+                    ) : (
+                      <Badge variant="secondary">禁用</Badge>
+                    )}
+                  </p>
+                </div>
+                {selectedProductForImage.description && (
+                  <div className="col-span-2">
+                    <p className="text-sm text-muted-foreground">描述</p>
+                    <p className="text-sm">{selectedProductForImage.description}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
