@@ -22,12 +22,12 @@ class ActivityLog(Base):
     __tablename__ = "activity_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    activity_type = Column(String, nullable=False, index=True)  # inventory, order, product, alert
-    action = Column(String, nullable=False)  # 具体操作，如 "入库", "出库", "创建订单", "更新产品"
-    item_name = Column(String, nullable=False)  # 相关项目名称
+    activity_type = Column(String(20), nullable=False, index=True)  # inventory, order, product, alert
+    action = Column(String(100), nullable=False)  # 具体操作，如 "入库", "出库", "创建订单", "更新产品"
+    item_name = Column(String(200), nullable=False)  # 相关项目名称
     user_id = Column(Integer, ForeignKey("users.id"))  # 操作用户
     reference_id = Column(Integer)  # 关联记录的ID
-    reference_type = Column(String)  # 关联记录的类型，如 "product", "order", "inventory"
+    reference_type = Column(String(50))  # 关联记录的类型，如 "product", "order", "inventory"
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
 
     # 关系

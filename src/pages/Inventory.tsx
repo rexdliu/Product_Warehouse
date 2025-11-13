@@ -3,8 +3,7 @@
 // 1) 把筛选输入交给独立组件 <SalesHistoryFilter /> 收集；
 // 2) 页面内通过 useMemo 在内存中做过滤（小数据量）；
 //    —— 大数据量时建议把过滤条件带到后端分页查询（更稳更快）；
-// 3) 日期过滤使用 date-fns 的 startOfDay/endOfDay/isWithinInterval，避免时区边界坑；
-// 4) 已移除国际化依赖，直接使用中文文案。
+// 3) 日期过滤使用 date-fns 的 startOfDay/endOfDay/isWithinInterval，避免时区边界坑；s
 // src/pages/Inventory.tsx
 import React, { useState, useMemo, useEffect } from 'react';
 import { useInventoryStore, useSalesStore, Distributor, SalesOrder } from '@/stores';

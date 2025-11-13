@@ -20,9 +20,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Package, RefreshCw, Filter } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Package, RefreshCw, Filter, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import { CreateOrderDialog } from '@/components/orders/CreateOrderDialog';
 
 const ORDER_STATUSES = [
   { value: 'pending', label: '待处理', color: 'bg-yellow-500' },
@@ -47,6 +49,7 @@ const OrderManagement: React.FC = () => {
   const [filteredOrders, setFilteredOrders] = useState<SalesOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedOrder, setSelectedOrder] = useState<SalesOrder | null>(null);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState('');
@@ -58,12 +61,24 @@ const OrderManagement: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (statusFilter === 'all') {
-      setFilteredOrders(orders);
-    } else {
-      setFilteredOrders(orders.filter(order => order.status === statusFilter));
+    let filtered = orders;
+
+    // 状态筛选
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(order => order.status === statusFilter);
     }
-  }, [statusFilter, orders]);
+
+    // 搜索筛选（订单号和产品名称）
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(order =>
+        order.orderCode.toLowerCase().includes(query) ||
+        order.productName.toLowerCase().includes(query)
+      );
+    }
+
+    setFilteredOrders(filtered);
+  }, [statusFilter, searchQuery, orders]);
 
   const loadOrders = async () => {
     try {
@@ -123,31 +138,45 @@ const OrderManagement: React.FC = () => {
           <Package className="h-8 w-8" />
           订单管理
         </h1>
-        <Button onClick={loadOrders} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          刷新
-        </Button>
+        <div className="flex items-center gap-2">
+          <CreateOrderDialog />
+          <Button onClick={loadOrders} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            刷新
+          </Button>
+        </div>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4">
             <CardTitle>订单列表</CardTitle>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="筛选状态" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部状态</SelectItem>
-                  {ORDER_STATUSES.map(status => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="搜索订单号或产品名称..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="筛选状态" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部状态</SelectItem>
+                    {ORDER_STATUSES.map(status => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </CardHeader>

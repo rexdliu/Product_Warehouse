@@ -3,8 +3,10 @@ import React from 'react';
 
 export const ChatWindow: React.FC = () => {
   return (
-    <div className="p-4">
-      <p>Chat window coming soon.</p>
-    </div>
+    <React.Fragment>
+      <div className="p-4">
+        <p>Chat window coming soon.</p>
+      </div>
+    </React.Fragment>
   );
 };

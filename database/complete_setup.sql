@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS products (
     cost DECIMAL(12, 2),
     unit VARCHAR(20) DEFAULT 'pcs' COMMENT '单位: pcs/box/liter',
     image_url VARCHAR(255) COMMENT '产品图片URL',
+    image_url VARCHAR(255) COMMENT '产品图片URL',
     min_stock_level INT DEFAULT 10 COMMENT '最低库存预警线',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -245,6 +246,7 @@ TRUNCATE TABLE warehouses;
 TRUNCATE TABLE products;
 TRUNCATE TABLE product_categories;
 TRUNCATE TABLE users;
+TRUNCATE TABLE warehouse_config;
 TRUNCATE TABLE warehouse_config;
 SET FOREIGN_KEY_CHECKS = 1;
 

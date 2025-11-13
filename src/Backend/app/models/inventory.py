@@ -8,7 +8,7 @@
 3. InventoryTransaction - 库存交易模型
 """
 
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Index, Boolean
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Index, Boolean, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -23,13 +23,13 @@ class Warehouse(Base):
     __tablename__ = "warehouses"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True, nullable=False)
-    code = Column(String, unique=True)  # 仓库代码，如 "WH001"
-    location = Column(String)
+    name = Column(String(100), index=True, nullable=False)
+    code = Column(String(50), unique=True)  # 仓库代码，如 "WH001"
+    location = Column(String(255))
     capacity = Column(Float)  # 仓库总容量（立方米）
     current_usage = Column(Float, default=0.0)  # 当前使用量（用于计算容量使用率）
-    manager_name = Column(String)  # 仓库管理员姓名
-    phone = Column(String)  # 联系电话
+    manager_name = Column(String(100))  # 仓库管理员姓名
+    phone = Column(String(20))  # 联系电话
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -47,8 +47,9 @@ class Inventory(Base):
     warehouse_id = Column(Integer, ForeignKey("warehouses.id"), nullable=False)
     quantity = Column(Integer, default=0)
     reserved_quantity = Column(Integer, default=0)  # 预留数量
-    location_code = Column(String)  # 货位编号，如 "A-01-03"
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    location_code = Column(String(50))  # 货位编号，如 "A-01-03"
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # 关系
     product = relationship("Product")
@@ -72,11 +73,11 @@ class InventoryTransaction(Base):
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     warehouse_id = Column(Integer, ForeignKey("warehouses.id"), nullable=False)
-    transaction_type = Column(String, nullable=False)  # IN, OUT, ADJUST, TRANSFER
+    transaction_type = Column(String(20), nullable=False)  # IN, OUT, ADJUST, TRANSFER
     quantity = Column(Integer, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"))  # 操作用户
-    reference = Column(String)  # 关联的订单号或其他参考信息
-    notes = Column(String)
+    reference = Column(String(100))  # 关联的订单号或其他参考信息
+    notes = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # 关系
