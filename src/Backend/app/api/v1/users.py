@@ -234,25 +234,16 @@ def delete_avatar(
 
 
 @router.get("/me/avatar/default")
-def get_default_avatar(
-    current_user: User = Depends(get_current_active_user)
-) -> Any:
+def get_default_avatar() -> Any:
     """
     获取默认头像SVG
 
-    基于用户名首字母生成SVG头像
+    返回一个通用的默认头像，不需要身份验证
+    可以在<img>标签中直接使用
     """
-    # 获取用户名首字母
-    username = str(current_user.username)
-    initial = username[0].upper() if username else "U"
-
-    # 生成随机背景色（基于用户ID确保一致性）
-    colors = [
-        "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
-        "#F7DC6F", "#BB8FCE", "#85C1E2", "#F8B739", "#52B788"
-    ]
-    user_id = int(current_user.id) if current_user.id else 0   #type: ignore[arg-type]
-    bg_color = colors[user_id % len(colors)]
+    # 使用通用的用户图标
+    initial = "U"
+    bg_color = "#4ECDC4"  # 使用固定的颜色
 
     # 生成SVG
     svg = f'''<?xml version="1.0" encoding="UTF-8"?>
@@ -267,7 +258,10 @@ def get_default_avatar(
     return Response(
         content=svg.encode('utf-8'),
         media_type="image/svg+xml",
-        headers={"Content-Disposition": f"inline; filename=avatar_{username}.svg"}
+        headers={
+            "Content-Disposition": "inline; filename=avatar_default.svg",
+            "Cache-Control": "public, max-age=86400"  # 缓存24小时
+        }
     )
 
 
