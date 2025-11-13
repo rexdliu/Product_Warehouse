@@ -489,6 +489,36 @@ class ApiService {
     };
   }
 
+  async uploadProductImage(productId: number, file: File): Promise<{ image_url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = this.getToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`/api/v1/products/${productId}/image`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(`图片上传失败 (${response.status}): ${detail || response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  async deleteProductImage(productId: number): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/v1/products/${productId}/image`, {
+      method: 'DELETE',
+    });
+  }
+
   async getInventoryItems(): Promise<InventoryItem[]> {
     const data = await this.request<InventoryDTO[]>('/api/v1/inventory/items');
     return data.map((item) => ({

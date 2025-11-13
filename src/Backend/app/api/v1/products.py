@@ -1,6 +1,9 @@
 from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlalchemy.orm import Session
+import os
+import uuid
+from pathlib import Path
 from app.core.database import get_db
 from app.crud.product import product as product_repo, category as category_repo
 from app.schemas.product import (
@@ -255,3 +258,150 @@ def delete_product(
     db.refresh(product)
 
     return product
+
+
+@router.post("/{product_id}/image")
+async def upload_product_image(
+    *,
+    product_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_manager_or_above)
+) -> Any:
+    """
+    上传产品图片
+
+    需要 Manager/Admin/Tester 权限
+    - 支持的格式: JPG, PNG, WEBP
+    - 最大文件大小: 5MB
+    - 文件保存在 static/products/ 目录
+    - 自动生成唯一文件名
+    """
+    # 验证产品是否存在
+    product = product_repo.get(db, id=product_id)
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"产品 ID {product_id} 不存在"
+        )
+
+    # 验证文件类型
+    if not file.content_type or file.content_type not in ["image/jpeg", "image/png", "image/webp"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="仅支持 JPG, PNG, WEBP 格式"
+        )
+
+    # 验证文件大小 (5MB)
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="图片大小不能超过 5MB"
+        )
+
+    # 获取文件扩展名
+    file_extension = file.filename.split(".")[-1] if file.filename else "jpg"
+
+    # 生成唯一文件名: product_{id}_{uuid}.{ext}
+    unique_filename = f"product_{product_id}_{uuid.uuid4().hex[:8]}.{file_extension}"
+
+    # 确保 static/products 目录存在
+    static_dir = Path(__file__).parent.parent.parent / "static" / "products"
+    static_dir.mkdir(parents=True, exist_ok=True)
+
+    # 保存文件
+    file_path = static_dir / unique_filename
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+    # 删除旧图片（如果存在且是本地文件）
+    if product.image_url and product.image_url.startswith("/static/products/"):
+        old_filename = product.image_url.split("/")[-1]
+        old_file_path = static_dir / old_filename
+        if old_file_path.exists():
+            try:
+                old_file_path.unlink()
+            except Exception as e:
+                print(f"删除旧图片失败: {e}")
+
+    # 更新数据库中的 image_url
+    image_url = f"/static/products/{unique_filename}"
+    product.image_url = image_url  # type: ignore[assignment]
+    db.add(product)
+    db.commit()
+    db.refresh(product)
+
+    # 记录活动日志
+    await log_activity(
+        db=db,
+        user_id=current_user.id,
+        action="upload_product_image",
+        resource_type="product",
+        resource_id=product_id,
+        details=f"上传产品图片: {unique_filename}"
+    )
+
+    return {"image_url": image_url, "message": "图片上传成功"}
+
+
+@router.delete("/{product_id}/image")
+async def delete_product_image(
+    *,
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_manager_or_above)
+) -> Any:
+    """
+    删除产品图片
+
+    需要 Manager/Admin/Tester 权限
+    - 删除文件系统中的图片文件
+    - 清除数据库中的 image_url
+    """
+    # 验证产品是否存在
+    product = product_repo.get(db, id=product_id)
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"产品 ID {product_id} 不存在"
+        )
+
+    if not product.image_url:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="该产品没有图片"
+        )
+
+    # 只删除本地存储的图片，不删除外部URL
+    if product.image_url.startswith("/static/products/"):
+        filename = product.image_url.split("/")[-1]
+        static_dir = Path(__file__).parent.parent.parent / "static" / "products"
+        file_path = static_dir / filename
+
+        if file_path.exists():
+            try:
+                file_path.unlink()
+            except Exception as e:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"删除图片文件失败: {str(e)}"
+                )
+
+    # 清除数据库中的 image_url
+    product.image_url = None  # type: ignore[assignment]
+    db.add(product)
+    db.commit()
+    db.refresh(product)
+
+    # 记录活动日志
+    await log_activity(
+        db=db,
+        user_id=current_user.id,
+        action="delete_product_image",
+        resource_type="product",
+        resource_id=product_id,
+        details="删除产品图片"
+    )
+
+    return {"message": "图片已删除"}

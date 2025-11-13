@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Upload, X, Image as ImageIcon } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -48,6 +48,11 @@ export const CreateProductDialog = () => {
     is_active: true,
   });
 
+  // 图片上传状态
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+
   // 获取产品分类列表
   const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: ['categories'],
@@ -56,12 +61,34 @@ export const CreateProductDialog = () => {
 
   // 创建产品 mutation
   const createMutation = useMutation({
-    mutationFn: (data: ProductCreateRequest) => apiService.createProduct(data),
+    mutationFn: async (data: ProductCreateRequest) => {
+      // 1. 先创建产品
+      const product = await apiService.createProduct(data);
+
+      // 2. 如果有图片文件，上传图片
+      if (imageFile) {
+        try {
+          setUploadingImage(true);
+          await apiService.uploadProductImage(product.id, imageFile);
+        } catch (error) {
+          console.error('图片上传失败:', error);
+          toast({
+            title: '图片上传失败',
+            description: '产品已创建，但图片上传失败，请稍后在编辑页面重新上传',
+            variant: 'destructive',
+          });
+        } finally {
+          setUploadingImage(false);
+        }
+      }
+
+      return product;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast({
         title: '创建成功',
-        description: '产品已成功创建',
+        description: imageFile ? '产品和图片已成功创建' : '产品已成功创建',
       });
       setOpen(false);
       resetForm();
@@ -91,6 +118,8 @@ export const CreateProductDialog = () => {
       image_url: '',
       is_active: true,
     });
+    setImageFile(null);
+    setImagePreview('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -111,6 +140,49 @@ export const CreateProductDialog = () => {
 
   const handleInputChange = (field: keyof ProductCreateRequest, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // 处理图片文件选择
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 验证文件类型
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast({
+        title: '格式错误',
+        description: '仅支持 JPG, PNG, WEBP 格式',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // 验证文件大小 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: '文件过大',
+        description: '图片大小不能超过 5MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // 设置文件和预览
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // 清空URL输入框（优先使用文件上传）
+    setFormData((prev) => ({ ...prev, image_url: '' }));
+  };
+
+  // 清除图片
+  const handleClearImage = () => {
+    setImageFile(null);
+    setImagePreview('');
   };
 
   // 如果没有编辑权限，不显示按钮
@@ -292,16 +364,73 @@ export const CreateProductDialog = () => {
               />
             </div>
 
-            {/* 图片URL */}
+            {/* 产品图片 */}
             <div className="space-y-2">
-              <Label htmlFor="image_url">产品图片URL</Label>
+              <Label>产品图片</Label>
+              <p className="text-sm text-muted-foreground">可以上传图片文件或输入图片URL</p>
+
+              {/* 图片预览 */}
+              {(imagePreview || formData.image_url) && (
+                <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
+                  <img
+                    src={imagePreview || formData.image_url}
+                    alt="预览"
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6"
+                    onClick={handleClearImage}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+
+              {/* 文件上传 */}
+              <div className="flex items-center gap-2">
+                <Label htmlFor="image-file-upload" className="cursor-pointer">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80">
+                    <Upload className="w-4 h-4" />
+                    <span>上传图片</span>
+                  </div>
+                </Label>
+                <Input
+                  id="image-file-upload"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleImageFileChange}
+                  className="hidden"
+                />
+                <span className="text-sm text-muted-foreground">
+                  或
+                </span>
+              </div>
+
+              {/* URL 输入 */}
               <Input
                 id="image_url"
                 type="url"
                 value={formData.image_url}
-                onChange={(e) => handleInputChange('image_url', e.target.value)}
+                onChange={(e) => {
+                  handleInputChange('image_url', e.target.value);
+                  // 如果输入URL，清除文件上传
+                  if (e.target.value) {
+                    setImageFile(null);
+                    setImagePreview('');
+                  }
+                }}
                 placeholder="https://example.com/image.jpg"
+                disabled={!!imageFile}
               />
+              {imageFile && (
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <ImageIcon className="w-3 h-3" />
+                  已选择文件: {imageFile.name}
+                </p>
+              )}
             </div>
 
             {/* 描述 */}
