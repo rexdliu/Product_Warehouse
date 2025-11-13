@@ -401,17 +401,20 @@ class ApiService {
     const requestBody: Record<string, any> = {
       name: data.name,
       sku: data.sku,
+      part_number: data.part_number,  // 必填
       category_id: data.category_id,
       price: data.price,
+      warehouse_id: data.warehouse_id,  // 必填
     };
 
     if (data.description !== undefined) requestBody.description = data.description;
-    if (data.part_number !== undefined) requestBody.part_number = data.part_number;
     if (data.engine_model !== undefined) requestBody.engine_model = data.engine_model;
     if (data.manufacturer !== undefined) requestBody.manufacturer = data.manufacturer;
     if (data.cost !== undefined) requestBody.cost = data.cost;
     if (data.unit !== undefined) requestBody.unit = data.unit;
     if (data.min_stock_level !== undefined) requestBody.min_stock_level = data.min_stock_level;
+    if (data.initial_quantity !== undefined) requestBody.initial_quantity = data.initial_quantity;
+    if (data.location_code !== undefined) requestBody.location_code = data.location_code;
     if (data.image_url !== undefined) requestBody.image_url = data.image_url;
     if (data.is_active !== undefined) requestBody.is_active = data.is_active;
 
