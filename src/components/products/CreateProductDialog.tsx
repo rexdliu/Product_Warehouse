@@ -44,6 +44,9 @@ export const CreateProductDialog = () => {
     cost: 0,
     unit: 'pcs',
     min_stock_level: 10,
+    warehouse_id: 0,
+    initial_quantity: 0,
+    location_code: '',
     image_url: '',
     is_active: true,
   });
@@ -57,6 +60,12 @@ export const CreateProductDialog = () => {
   const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: ['categories'],
     queryFn: () => apiService.getProductCategories(),
+  });
+
+  // 获取仓库列表
+  const { data: warehouses, isLoading: warehousesLoading } = useQuery({
+    queryKey: ['warehouses'],
+    queryFn: () => apiService.getWarehouses(),
   });
 
   // 创建产品 mutation
@@ -114,6 +123,9 @@ export const CreateProductDialog = () => {
       cost: 0,
       unit: 'pcs',
       min_stock_level: 10,
+      warehouse_id: 0,
+      initial_quantity: 0,
+      location_code: '',
       image_url: '',
       is_active: true,
     });
@@ -125,10 +137,10 @@ export const CreateProductDialog = () => {
     e.preventDefault();
 
     // 验证必填字段
-    if (!formData.name || !formData.sku || !formData.category_id || formData.price <= 0) {
+    if (!formData.name || !formData.sku || !formData.part_number || !formData.category_id || !formData.warehouse_id || formData.price <= 0) {
       toast({
         title: '验证失败',
-        description: '请填写所有必填字段',
+        description: '请填写所有必填字段（产品名称、SKU、零件号、分类、仓库、售价）',
         variant: 'destructive',
       });
       return;
@@ -239,12 +251,15 @@ export const CreateProductDialog = () => {
             {/* Cummins 特定字段 */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="part_number">Cummins 零件号</Label>
+                <Label htmlFor="part_number">
+                  Cummins 零件号 <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="part_number"
                   value={formData.part_number}
                   onChange={(e) => handleInputChange('part_number', e.target.value)}
                   placeholder="如: 6BT5.9-C120"
+                  required
                 />
               </div>
 
@@ -351,16 +366,71 @@ export const CreateProductDialog = () => {
               </div>
             </div>
 
-            {/* 库存管理 */}
-            <div className="space-y-2">
-              <Label htmlFor="min_stock_level">最低库存预警线</Label>
-              <Input
-                id="min_stock_level"
-                type="number"
-                min="0"
-                value={formData.min_stock_level}
-                onChange={(e) => handleInputChange('min_stock_level', parseInt(e.target.value) || 10)}
-              />
+            {/* 仓库和库存管理 */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold">仓库和库存</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="warehouse_id">
+                    仓库 <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={formData.warehouse_id ? formData.warehouse_id.toString() : ''}
+                    onValueChange={(value) => handleInputChange('warehouse_id', parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择仓库" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {warehousesLoading ? (
+                        <SelectItem value="loading" disabled>
+                          加载中...
+                        </SelectItem>
+                      ) : (
+                        warehouses?.map((wh) => (
+                          <SelectItem key={wh.id} value={wh.id.toString()}>
+                            {wh.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="initial_quantity">初始库存数量</Label>
+                  <Input
+                    id="initial_quantity"
+                    type="number"
+                    min="0"
+                    value={formData.initial_quantity || 0}
+                    onChange={(e) => handleInputChange('initial_quantity', parseInt(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="location_code">货位编号</Label>
+                  <Input
+                    id="location_code"
+                    value={formData.location_code}
+                    onChange={(e) => handleInputChange('location_code', e.target.value)}
+                    placeholder="如: A-01-03"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="min_stock_level">最低库存预警线</Label>
+                  <Input
+                    id="min_stock_level"
+                    type="number"
+                    min="0"
+                    value={formData.min_stock_level}
+                    onChange={(e) => handleInputChange('min_stock_level', parseInt(e.target.value) || 10)}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* 产品图片 */}

@@ -274,7 +274,7 @@ export interface ProductCreateRequest {
   name: string;
   sku: string;
   description?: string;
-  part_number?: string;
+  part_number: string;  // 必填
   engine_model?: string;
   manufacturer?: string;
   category_id: number;
@@ -282,6 +282,9 @@ export interface ProductCreateRequest {
   cost?: number;
   unit?: string;
   min_stock_level?: number;
+  warehouse_id: number;  // 必填 - 仓库ID
+  initial_quantity?: number;  // 初始库存数量
+  location_code?: string;  // 货位编号
   image_url?: string;
   is_active?: boolean;
 }
