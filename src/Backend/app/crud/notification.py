@@ -37,7 +37,7 @@ class CRUDNotification(CRUDBase[Notification, NotificationCreate, NotificationUp
         query = db.query(self.model).filter(
             and_(
                 self.model.user_id == user_id,
-                self.model.expires_at > datetime.utcnow()  # 未过期
+                self.model.expire_at > datetime.utcnow()  # 未过期
             )
         )
 
@@ -61,7 +61,7 @@ class CRUDNotification(CRUDBase[Notification, NotificationCreate, NotificationUp
             and_(
                 self.model.user_id == user_id,
                 self.model.is_read == False,
-                self.model.expires_at > datetime.utcnow()  # 未过期
+                self.model.expire_at > datetime.utcnow()  # 未过期
             )
         ).count()
 
@@ -107,7 +107,7 @@ class CRUDNotification(CRUDBase[Notification, NotificationCreate, NotificationUp
             and_(
                 self.model.user_id == user_id,
                 self.model.is_read == False,
-                self.model.expires_at > datetime.utcnow()
+                self.model.expire_at > datetime.utcnow()
             )
         ).update({"is_read": True})
 
@@ -125,7 +125,7 @@ class CRUDNotification(CRUDBase[Notification, NotificationCreate, NotificationUp
             int: 删除的通知数量
         """
         count = db.query(self.model).filter(
-            self.model.expires_at <= datetime.utcnow()
+            self.model.expire_at <= datetime.utcnow()
         ).delete()
 
         db.commit()
@@ -170,7 +170,7 @@ class CRUDNotification(CRUDBase[Notification, NotificationCreate, NotificationUp
 
         # 添加过期时间
         obj_in_data = notification_in.model_dump()
-        obj_in_data["expires_at"] = datetime.utcnow() + timedelta(days=days_to_expire)
+        obj_in_data["expire_at"] = datetime.utcnow() + timedelta(days=days_to_expire)
 
         db_obj = self.model(**obj_in_data)
         db.add(db_obj)
