@@ -537,8 +537,9 @@ class ApiService {
     }));
   }
 
-  async getDistributors(): Promise<Distributor[]> {
-    const data = await this.request<DistributorDTO[]>('/api/v1/sales/distributors');
+  async getDistributors(search?: string): Promise<Distributor[]> {
+    const params = search && search.trim() ? `?search=${encodeURIComponent(search)}` : '';
+    const data = await this.request<DistributorDTO[]>(`/api/v1/sales/distributors${params}`);
     return data.map((item) => ({
       id: item.id,
       name: item.name,
@@ -549,9 +550,29 @@ class ApiService {
     }));
   }
 
-  async getSalesOrders(distributorId?: number): Promise<SalesOrder[]> {
-    const params = distributorId ? `?distributor_id=${distributorId}` : '';
-    const data = await this.request<SalesOrderDTO[]>(`/api/v1/sales/orders${params}`);
+  async getSalesOrders(filters?: {
+    distributorId?: number;
+    productName?: string;
+    startDate?: string;  // YYYY-MM-DD
+    endDate?: string;    // YYYY-MM-DD
+  }): Promise<SalesOrder[]> {
+    const params = new URLSearchParams();
+    if (filters?.distributorId) {
+      params.append('distributor_id', filters.distributorId.toString());
+    }
+    if (filters?.productName && filters.productName.trim()) {
+      params.append('product_name', filters.productName.trim());
+    }
+    if (filters?.startDate) {
+      params.append('start_date', filters.startDate);
+    }
+    if (filters?.endDate) {
+      params.append('end_date', filters.endDate);
+    }
+
+    const queryString = params.toString();
+    const url = `/api/v1/sales/orders${queryString ? '?' + queryString : ''}`;
+    const data = await this.request<SalesOrderDTO[]>(url);
     return data.map((item) => ({
       id: item.id,
       orderCode: item.order_code,

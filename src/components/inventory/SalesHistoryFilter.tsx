@@ -32,7 +32,7 @@ export const SalesHistoryFilter: React.FC<SalesHistoryFilterProps> = ({ onFilter
     <div className="flex flex-col md:flex-row gap-4 items-center p-4 border-b">
       {/* 产品名关键词输入 */}
       <Input
-        placeholder="通过经销商名称或ID搜索..."
+        placeholder="输入产品名称搜索..."
         className="max-w-xs"
         value={productName}
         onChange={(e) => setProductName(e.target.value)}

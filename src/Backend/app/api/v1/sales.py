@@ -39,8 +39,20 @@ def list_distributors(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
+    search: Optional[str] = None,
 ) -> List[DistributorInDB]:
-    distributors = sales_crud.distributor.get_multi(db, skip=skip, limit=limit)
+    """
+    查询经销商列表
+
+    支持筛选条件：
+    - search: 搜索关键词（支持名称、代码、联系人、地区模糊搜索）
+    """
+    if search and search.strip():
+        distributors = sales_crud.sales_order.search_distributors(
+            db, search=search, skip=skip, limit=limit
+        )
+    else:
+        distributors = sales_crud.distributor.get_multi(db, skip=skip, limit=limit)
     return _map_distributors(distributors)
 
 
@@ -72,13 +84,51 @@ def list_sales_orders(
     skip: int = 0,
     limit: int = 100,
     distributor_id: Optional[int] = None,
+    product_name: Optional[str] = None,
+    start_date: Optional[str] = None,  # 格式: YYYY-MM-DD
+    end_date: Optional[str] = None,    # 格式: YYYY-MM-DD
 ) -> List[SalesOrderInDB]:
-    if distributor_id is not None:
-        orders = sales_crud.sales_order.get_by_distributor(
-            db, distributor_id=distributor_id, skip=skip, limit=limit
-        )
-    else:
-        orders = sales_crud.sales_order.get_multi(db, skip=skip, limit=limit)
+    """
+    查询销售订单列表
+
+    支持筛选条件：
+    - distributor_id: 经销商ID
+    - product_name: 产品名称关键词（模糊搜索）
+    - start_date: 订单开始日期（格式: YYYY-MM-DD，包含当天）
+    - end_date: 订单结束日期（格式: YYYY-MM-DD，包含当天）
+    """
+    # 解析日期参数
+    start_dt = None
+    end_dt = None
+    if start_date:
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="start_date 格式错误，应为 YYYY-MM-DD"
+            )
+    if end_date:
+        try:
+            # 结束日期设置为当天的23:59:59
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+            end_dt = end_dt.replace(hour=23, minute=59, second=59)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="end_date 格式错误，应为 YYYY-MM-DD"
+            )
+
+    # 使用增强的查询方法
+    orders = sales_crud.sales_order.get_by_distributor_with_filters(
+        db,
+        distributor_id=distributor_id,
+        product_name=product_name,
+        start_date=start_dt,
+        end_date=end_dt,
+        skip=skip,
+        limit=limit
+    )
     return _map_sales_orders(orders)
 
 
