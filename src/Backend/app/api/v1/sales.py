@@ -17,6 +17,7 @@ from app.schemas.sales import (
 )
 from app.models.sales import Distributor, SalesOrder
 from app.models.product import Product
+from app.models.inventory import InventoryTransaction
 from app.api.deps import require_manager_or_above
 from app.models.user import User
 from app.utils.activity import log_activity
@@ -207,6 +208,19 @@ def update_sales_order(
         reference_id=int(order.id),  # type: ignore[arg-type]
         reference_type="order"
     )
+
+    # 如果订单状态变更为已发货或已完成，创建出库交易记录
+    if status_changed and order_in.status in ["shipped", "completed"] and old_status not in ["shipped", "completed"]:
+        transaction = InventoryTransaction(
+            product_id=order.product_id,  # type: ignore[arg-type]
+            warehouse_id=order.warehouse_id,  # type: ignore[arg-type]
+            transaction_type="OUT",
+            quantity=order.quantity,  # type: ignore[arg-type]
+            user_id=current_user.id,  # type: ignore[arg-type]
+            reference=f"订单 {order.order_code}",  # type: ignore[arg-type]
+            notes=f"订单出库 - {order.product_name}"  # type: ignore[arg-type]
+        )
+        db.add(transaction)
 
     # 如果订单状态发生变化，通知订单创建者
     if status_changed and order.user_id and order.user_id != current_user.id:  # type: ignore[comparison-overlap]

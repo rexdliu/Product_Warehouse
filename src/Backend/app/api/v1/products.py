@@ -24,6 +24,7 @@ from app.api.deps import (
 )
 from app.models.user import User
 from app.models.product import Product
+from app.models.inventory import InventoryTransaction
 
 router = APIRouter()
 
@@ -117,6 +118,19 @@ def create_product(
         location_code=product_in.location_code
     )
     inventory_repo.create(db, obj_in=inventory_data)
+
+    # 如果有初始库存，创建入库交易记录
+    if product_in.initial_quantity > 0:
+        transaction = InventoryTransaction(
+            product_id=product.id,  # type: ignore[arg-type]
+            warehouse_id=product_in.warehouse_id,
+            transaction_type="IN",
+            quantity=product_in.initial_quantity,
+            user_id=current_user.id,  # type: ignore[arg-type]
+            reference=f"初始库存 - {product.sku}",  # type: ignore[arg-type]
+            notes=f"产品创建时的初始库存"
+        )
+        db.add(transaction)
 
     # 记录活动日志
     log_activity(
