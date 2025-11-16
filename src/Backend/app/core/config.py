@@ -51,6 +51,45 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = None
     RAG_ENABLED: bool = False
 
+    # 对象存储配置
+    STORAGE_TYPE: str = Field(
+        default="local",
+        description="存储类型: local, minio, oss, s3"
+    )
+
+    # MinIO 配置
+    MINIO_ENDPOINT: str = Field(
+        default="localhost:9000",
+        description="MinIO 服务地址"
+    )
+    MINIO_ACCESS_KEY: str = Field(
+        default="minioadmin",
+        description="MinIO 访问密钥"
+    )
+    MINIO_SECRET_KEY: str = Field(
+        default="minioadmin123",
+        description="MinIO 密钥"
+    )
+    MINIO_BUCKET: str = Field(
+        default="product-warehouse",
+        description="MinIO 存储桶名称"
+    )
+    MINIO_SECURE: bool = Field(
+        default=False,
+        description="是否使用HTTPS连接MinIO"
+    )
+    MINIO_PUBLIC_URL: Optional[str] = Field(
+        default=None,
+        description="MinIO 公开访问URL（配置反向代理时使用）"
+    )
+
+    # 阿里云 OSS 配置（可选）
+    OSS_ACCESS_KEY_ID: Optional[str] = None
+    OSS_ACCESS_KEY_SECRET: Optional[str] = None
+    OSS_ENDPOINT: Optional[str] = None
+    OSS_BUCKET: Optional[str] = None
+    OSS_CDN_DOMAIN: Optional[str] = None
+
     @property
     def SQLALCHEMY_DATABASE_URL(self) -> str:
         """返回数据库URL"""

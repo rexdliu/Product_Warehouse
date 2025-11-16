@@ -87,13 +87,54 @@ def on_startup() -> None:
     """应用启动时初始化数据库表（本地开发）。
 
     未连接外部数据库时，使用 SQLite 自动建表，方便前端联调。
-    同时启动后台任务调度器。
+    同时启动后台任务调度器和存储后端。
     """
     Base.metadata.create_all(bind=engine)
 
     # 启动后台任务调度器
     from app.core.scheduler import start_scheduler
     start_scheduler()
+
+    # 初始化存储后端
+    from app.core.storage import init_storage, LocalStorageBackend, MinIOStorageBackend
+
+    storage_type = settings.STORAGE_TYPE.lower()
+    print(f"初始化存储后端: {storage_type}")
+
+    if storage_type == "minio":
+        # 使用 MinIO 对象存储
+        backend = MinIOStorageBackend(
+            endpoint=settings.MINIO_ENDPOINT,
+            access_key=settings.MINIO_ACCESS_KEY,
+            secret_key=settings.MINIO_SECRET_KEY,
+            bucket_name=settings.MINIO_BUCKET,
+            secure=settings.MINIO_SECURE,
+            public_url=settings.MINIO_PUBLIC_URL
+        )
+        print(f"MinIO 存储已初始化: {settings.MINIO_ENDPOINT}/{settings.MINIO_BUCKET}")
+    elif storage_type == "oss":
+        # 使用阿里云 OSS（需要配置）
+        from app.core.storage import OSSStorageBackend
+        if not all([settings.OSS_ACCESS_KEY_ID, settings.OSS_ACCESS_KEY_SECRET,
+                    settings.OSS_ENDPOINT, settings.OSS_BUCKET]):
+            raise ValueError("OSS 配置不完整，请检查环境变量")
+        backend = OSSStorageBackend(
+            access_key_id=settings.OSS_ACCESS_KEY_ID,  # type: ignore
+            access_key_secret=settings.OSS_ACCESS_KEY_SECRET,  # type: ignore
+            endpoint=settings.OSS_ENDPOINT,  # type: ignore
+            bucket_name=settings.OSS_BUCKET,  # type: ignore
+            cdn_domain=settings.OSS_CDN_DOMAIN
+        )
+        print(f"阿里云 OSS 存储已初始化: {settings.OSS_BUCKET}")
+    else:
+        # 默认使用本地文件存储
+        backend = LocalStorageBackend(
+            base_path=static_dir,
+            base_url="/static"
+        )
+        print(f"本地文件存储已初始化: {static_dir}")
+
+    init_storage(backend)
 
 
 @app.on_event("shutdown")

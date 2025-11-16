@@ -141,7 +141,11 @@ async def upload_avatar(
     支持格式: JPG, PNG, WEBP
     最大文件大小: 2MB
     图片会被自动调整为 200x200 像素
+    支持多种存储后端：本地文件系统、MinIO、OSS等
     """
+    from app.core.storage import get_storage
+    import io
+
     # 1. 验证文件类型
     if file.content_type not in ["image/jpeg", "image/png", "image/webp"]:
         raise HTTPException(
@@ -160,17 +164,7 @@ async def upload_avatar(
             detail="文件大小不能超过 2MB"
         )
 
-    # 3. 创建avatars目录（如果不存在）
-    # 使用绝对路径，指向app/static/avatars
-    avatars_dir = Path(__file__).parent.parent.parent / "static" / "avatars"
-    avatars_dir.mkdir(parents=True, exist_ok=True)
-
-    # 4. 生成唯一文件名
-    file_ext = "jpg"
-    filename = f"{current_user.id}_{uuid.uuid4().hex[:8]}.{file_ext}"
-    filepath = avatars_dir / filename
-
-    # 5. 使用 Pillow 处理图片
+    # 3. 使用 Pillow 处理图片
     try:
         image = Image.open(file.file)
 
@@ -181,16 +175,44 @@ async def upload_avatar(
         # 调整尺寸为 200x200
         image = image.resize((200, 200), Image.Resampling.LANCZOS)
 
-        # 保存图片
-        image.save(filepath, "JPEG", quality=90)
+        # 保存到BytesIO对象
+        output = io.BytesIO()
+        image.save(output, "JPEG", quality=90)
+        output.seek(0)
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"图片处理失败: {str(e)}"
         )
 
-    # 6. 生成URL并更新数据库
-    avatar_url = f"/static/avatars/{filename}"
+    # 4. 生成唯一文件名
+    file_ext = "jpg"
+    filename = f"avatar_{current_user.id}_{uuid.uuid4().hex[:8]}.{file_ext}"
+
+    # 5. 使用存储后端上传文件
+    try:
+        storage = get_storage()
+        avatar_url = await storage.upload(
+            file=output,
+            filename=filename,
+            content_type="image/jpeg",
+            folder="avatars"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"文件上传失败: {str(e)}"
+        )
+
+    # 6. 删除旧头像（如果存在且不是默认头像）
+    if current_user.avatar_url and not str(current_user.avatar_url).endswith("default"):
+        try:
+            await storage.delete(str(current_user.avatar_url))
+        except Exception as e:
+            print(f"删除旧头像失败: {str(e)}")
+
+    # 7. 更新数据库
     current_user.avatar_url = avatar_url  # type: ignore[assignment]
     db.add(current_user)
     db.commit()
@@ -199,7 +221,7 @@ async def upload_avatar(
 
 
 @router.delete("/me/avatar", response_model=dict)
-def delete_avatar(
+async def delete_avatar(
     *,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -208,19 +230,16 @@ def delete_avatar(
     删除用户头像
 
     删除用户的自定义头像，恢复使用默认头像
+    支持多种存储后端：本地文件系统、MinIO、OSS等
     """
+    from app.core.storage import get_storage
+
     # 如果用户有自定义头像，删除文件
     avatar_url = current_user.avatar_url
-    if avatar_url is not None and str(avatar_url).startswith("/static/avatars/"):
+    if avatar_url is not None and not str(avatar_url).endswith("default"):
         try:
-            # 获取文件路径
-            avatars_dir = Path(__file__).parent.parent.parent / "static" / "avatars"
-            filename = str(avatar_url).split("/")[-1]
-            filepath = avatars_dir / filename
-
-            # 删除文件
-            if filepath.exists():
-                filepath.unlink()
+            storage = get_storage()
+            await storage.delete(str(avatar_url))
         except Exception as e:
             # 即使文件删除失败，也继续清空数据库中的记录
             print(f"删除头像文件失败: {str(e)}")
